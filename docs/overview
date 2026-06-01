@@ -1,0 +1,26 @@
+# Rental Management SaaS
+
+A SaaS platform for landlords and property managers.
+
+## Tech Stack
+
+### Frontend
+- React
+
+### Backend
+- Node.js
+- Express.js
+
+### Database
+- PostgreSQL
+
+## Modules
+
+- Authentication
+- Dashboard
+- Properties
+- Units
+- Tenants
+- Rent Payments
+- Maintenance Requests
+- Reports
