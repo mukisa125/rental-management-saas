@@ -1,0 +1,107 @@
+const Property = require('../models/Property');
+const Unit = require('../models/Unit');
+
+// @desc    Get all properties
+// @route   GET /api/properties
+// @access  Private
+const getProperties = async (req, res) => {
+  try {
+    const properties = await Property.find({ owner: req.user._id })
+      .populate('owner', 'name email')
+      .sort('-createdAt');
+    res.json(properties);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single property
+// @route   GET /api/properties/:id
+// @access  Private
+const getPropertyById = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id).populate('owner', 'name email');
+    
+    if (property) {
+      res.json(property);
+    } else {
+      res.status(404).json({ message: 'Property not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create new property
+// @route   POST /api/properties
+// @access  Private
+const createProperty = async (req, res) => {
+  try {
+    console.log('Creating property with data:', req.body);
+    console.log('User:', req.user);
+    
+    const property = await Property.create({
+      ...req.body,
+      owner: req.user._id,
+    });
+
+    res.status(201).json(property);
+  } catch (error) {
+    console.error('Error creating property:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update property
+// @route   PUT /api/properties/:id
+// @access  Private
+const updateProperty = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+
+    if (property) {
+      property.name = req.body.name || property.name;
+      property.location = req.body.location || property.location;
+      property.description = req.body.description || property.description;
+      property.totalUnits = req.body.totalUnits || property.totalUnits;
+      property.occupiedUnits = req.body.occupiedUnits || property.occupiedUnits;
+      property.status = req.body.status || property.status;
+      property.image = req.body.image || property.image;
+
+      const updatedProperty = await property.save();
+      res.json(updatedProperty);
+    } else {
+      res.status(404).json({ message: 'Property not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete property
+// @route   DELETE /api/properties/:id
+// @access  Private
+const deleteProperty = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+
+    if (property) {
+      // Also delete all units associated with this property
+      await Unit.deleteMany({ property: req.params.id });
+      await property.deleteOne();
+      res.json({ message: 'Property removed' });
+    } else {
+      res.status(404).json({ message: 'Property not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  getProperties,
+  getPropertyById,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+};
