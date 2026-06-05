@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`\n=== ${req.method} ${req.path} ===`);
   console.log('Headers:', req.headers);
   console.log('Body:', req.body);
   next();
@@ -37,6 +37,23 @@ app.get('/', (req, res) => {
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Error handling middleware (MUST be last)
+app.use((err, req, res, next) => {
+  console.error('Error caught by error handler:', err);
+  console.error('Stack:', err.stack);
+  if (!res.headersSent) {
+    res.status(err.status || 500).json({ 
+      message: err.message,
+      error: process.env.NODE_ENV === 'development' ? err : {}
+    });
+  }
 });
 
 const PORT = process.env.PORT || 5000;

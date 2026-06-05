@@ -40,15 +40,37 @@ const createProperty = async (req, res) => {
     console.log('Creating property with data:', req.body);
     console.log('User:', req.user);
     
-    const property = await Property.create({
-      ...req.body,
+    if (!req.user || !req.user._id) {
+      console.error('No user found in request');
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const propertyData = {
+      name: req.body.name,
+      location: req.body.location,
+      description: req.body.description || '',
+      totalUnits: req.body.totalUnits || 0,
+      status: req.body.status || 'active',
       owner: req.user._id,
-    });
+    };
+
+    console.log('Property data to save:', propertyData);
+
+    const property = await Property.create(propertyData);
+    console.log('Property created successfully:', property);
 
     res.status(201).json(property);
   } catch (error) {
     console.error('Error creating property:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: error.message,
+      error: error.errors ? Object.keys(error.errors).reduce((acc, key) => {
+        acc[key] = error.errors[key].message;
+        return acc;
+      }, {}) : {}
+    });
   }
 };
 
