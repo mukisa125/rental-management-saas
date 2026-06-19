@@ -56,9 +56,9 @@ const Dashboard = () => {
 
       // Generate recent activities
       const activities = [
-        { type: 'payment', message: 'Rent payment received from John Doe', time: '2 hours ago' },
-        { type: 'maintenance', message: 'New maintenance request from Jane Smith', time: '4 hours ago' },
-        { type: 'tenant', message: 'Tenant Jane Smith moved in at Sunset Apartments', time: '1 day ago' },
+        { type: 'payment', message: 'Rent payment received from Mukisa Mark', time: '2 hours ago' },
+        { type: 'maintenance', message: 'New maintenance request from Mary Namukisa', time: '4 hours ago' },
+        { type: 'tenant', message: 'Mukoza Ben moved in at Sunset Apartments', time: '1 day ago' },
         { type: 'property', message: 'Property Sunset Apartments updated', time: '2 days ago' },
       ];
       setRecentActivities(activities);

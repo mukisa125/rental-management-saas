@@ -1,0 +1,15 @@
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+Error listing routes TypeError: Cannot read properties of undefined (reading 'stack')
+    at Object.<anonymous> (C:\Users\Mukisa\Desktop\intern\rental-management-saas\backend\server.js:46:15)
+    at Module._compile (node:internal/modules/cjs/loader:1830:14)
+    at Object..js (node:internal/modules/cjs/loader:1961:10)
+    at Module.load (node:internal/modules/cjs/loader:1553:32)
+    at Module._load (node:internal/modules/cjs/loader:1355:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+(node:10080) [MONGOOSE] Warning: `errors` is a reserved schema pathname and may break some functionality. You are allowed to use it, but use at your own risk. To disable this warning pass `suppressReservedKeysWarning` as a schema option.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Server running on port 5000
+MongoDB Connected: 127.0.0.1
+(node:10080) [MONGOOSE] Warning: mongoose: Duplicate schema index on {"timestamp":1} for model "SystemMonitoring". This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.

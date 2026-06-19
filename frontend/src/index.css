@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #16a34a;
-  --color-primary-600: #15803d;
-  --color-primary-700: #14532d;
-  --color-primary-800: #064e3b;
-  --color-primary-900: #022c22;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -22,6 +23,121 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+:root.dark body {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+:root.dark .bg-white,
+:root.dark .bg-white\/95 {
+  background-color: #111827 !important;
+}
+
+:root.dark .bg-gray-50,
+:root.dark .bg-slate-50,
+:root.dark .bg-\[\#f8fbff\] {
+  background-color: #0f172a !important;
+}
+
+:root.dark .bg-gray-100,
+:root.dark .bg-slate-100 {
+  background-color: #1f2937 !important;
+}
+
+:root.dark .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.14) !important;
+}
+
+:root.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+:root.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+}
+
+:root.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+}
+
+:root.dark .text-gray-900,
+:root.dark .text-slate-950,
+:root.dark .text-slate-900,
+:root.dark .text-slate-800,
+:root.dark .text-gray-800 {
+  color: #f8fafc !important;
+}
+
+:root.dark .text-gray-700,
+:root.dark .text-slate-700,
+:root.dark .text-gray-600,
+:root.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+:root.dark .text-gray-500,
+:root.dark .text-slate-500,
+:root.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+:root.dark .border-gray-200,
+:root.dark .border-slate-200,
+:root.dark .border-slate-100,
+:root.dark .border-gray-100 {
+  border-color: #243244 !important;
+}
+
+:root.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #243244 !important;
+}
+
+:root.dark .shadow,
+:root.dark .shadow-sm,
+:root.dark .shadow-lg,
+:root.dark [class*="shadow-\["] {
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root.dark input,
+:root.dark select,
+:root.dark textarea {
+  color: #e5e7eb;
+}
+
+:root.dark input::placeholder,
+:root.dark textarea::placeholder {
+  color: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 #root {
   min-height: 100vh;
+}
+
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-table table {
+  min-width: 720px;
+}
+
+@media (max-width: 640px) {
+  .responsive-table table {
+    min-width: 640px;
+  }
 }

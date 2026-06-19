@@ -11,10 +11,12 @@ const Register = () => {
     confirmPassword: '',
     phone: '',
     company: '',
+    role: 'manager',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setRegistrationStatus(null);
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -40,11 +43,31 @@ const Register = () => {
       email: formData.email,
       password: formData.password,
       phone: formData.phone,
-      company: formData.company,
+      companyName: formData.company,
+      role: formData.role,
     });
     
     if (result.success) {
-      navigate('/dashboard');
+      if (result.token) {
+        // User approved, redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        // User pending approval
+        setRegistrationStatus({
+          pending: true,
+          message: 'Registration successful! Your account is pending approval from the admin. You will receive an email once your account is approved.'
+        });
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          phone: '',
+          company: '',
+          role: 'manager',
+        });
+      }
     } else {
       setError(result.error);
     }
@@ -98,6 +121,13 @@ const Register = () => {
               </div>
             )}
 
+            {registrationStatus && registrationStatus.pending && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+                <p className="font-semibold mb-2">✓ Registration Successful!</p>
+                <p className="text-sm">{registrationStatus.message}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -147,6 +177,22 @@ const Register = () => {
                     placeholder="+256 700 000 000"
                   />
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  User Role
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  required
+                >
+                  <option value="manager">Manager (requires approval)</option>
+                  <option value="owner">Owner (requires approval)</option>
+                  <option value="tenant">Tenant</option>
+                </select>
               </div>
 
               <div className="mb-4">

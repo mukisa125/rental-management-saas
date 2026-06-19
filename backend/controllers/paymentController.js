@@ -1,5 +1,7 @@
 const Payment = require('../models/Payment');
 const Tenant = require('../models/Tenant');
+const Property = require('../models/Property');
+const mongoose = require('mongoose');
 
 // @desc    Get all payments
 // @route   GET /api/payments
@@ -8,7 +10,7 @@ const getPayments = async (req, res) => {
   try {
     const { status, tenant, property } = req.query;
     
-    let query = {};
+    let query = { owner: req.user._id };
     if (status) query.status = status;
     if (tenant) query.tenant = tenant;
     if (property) query.property = property;
@@ -36,6 +38,10 @@ const getPaymentById = async (req, res) => {
       .populate('unit', 'unitNumber');
     
     if (payment) {
+      // Check if user owns this payment
+      if (payment.owner.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to access this payment' });
+      }
       res.json(payment);
     } else {
       res.status(404).json({ message: 'Payment not found' });
@@ -50,9 +56,22 @@ const getPaymentById = async (req, res) => {
 // @access  Private
 const createPayment = async (req, res) => {
   try {
+    const { property } = req.body;
+
+    // Check if property exists and belongs to user
+    const propertyDoc = await Property.findById(property);
+    if (!propertyDoc) {
+      return res.status(400).json({ message: 'Property not found' });
+    }
+
+    if (propertyDoc.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to create payments for this property' });
+    }
+
     const payment = await Payment.create({
       ...req.body,
       status: req.body.paidDate ? 'paid' : 'pending',
+      owner: req.user._id
     });
 
     res.status(201).json(payment);
@@ -69,6 +88,11 @@ const updatePayment = async (req, res) => {
     const payment = await Payment.findById(req.params.id);
 
     if (payment) {
+      // Check if user owns this payment
+      if (payment.owner.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this payment' });
+      }
+
       payment.amount = req.body.amount || payment.amount;
       payment.dueDate = req.body.dueDate || payment.dueDate;
       payment.paidDate = req.body.paidDate || payment.paidDate;
@@ -94,6 +118,11 @@ const deletePayment = async (req, res) => {
     const payment = await Payment.findById(req.params.id);
 
     if (payment) {
+      // Check if user owns this payment
+      if (payment.owner.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to delete this payment' });
+      }
+
       await payment.deleteOne();
       res.json({ message: 'Payment removed' });
     } else {
@@ -116,6 +145,7 @@ const getPaymentStats = async (req, res) => {
     const monthlyRevenue = await Payment.aggregate([
       {
         $match: {
+          owner: new mongoose.Types.ObjectId(req.user._id),
           status: 'paid',
           paidDate: { $gte: currentMonth }
         }
@@ -128,9 +158,9 @@ const getPaymentStats = async (req, res) => {
       }
     ]);
 
-    const collected = await Payment.countDocuments({ status: 'paid' });
-    const pending = await Payment.countDocuments({ status: 'pending' });
-    const overdue = await Payment.countDocuments({ status: 'overdue' });
+    const collected = await Payment.countDocuments({ owner: req.user._id, status: 'paid' });
+    const pending = await Payment.countDocuments({ owner: req.user._id, status: 'pending' });
+    const overdue = await Payment.countDocuments({ owner: req.user._id, status: 'overdue' });
 
     res.json({
       monthlyRevenue: monthlyRevenue[0]?.total || 0,

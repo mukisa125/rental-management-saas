@@ -1,72 +1,80 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Building2, 
-  DoorOpen, 
-  Users, 
-  DollarSign, 
-  Wrench, 
-  BarChart3, 
-  MessageSquare, 
-  Settings, 
-  LogOut 
-} from 'lucide-react';
+import { Home, Users, FileText, BarChart2, Layers, Settings, Zap, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const menu = [
+  { to: '/super-admin/dashboard', label: 'Dashboard', icon: Home },
+  { to: '/super-admin/customers', label: 'Customers', icon: Users },
+  { to: '/super-admin/subscriptions', label: 'Subscriptions', icon: FileText },
+  { to: '/super-admin/reports', label: 'Reports', icon: BarChart2 },
+  { to: '/super-admin/system-monitor', label: 'System Monitor', icon: Layers },
+  { to: '/super-admin/activity-logs', label: 'Activity Logs', icon: Zap },
+  { to: '/super-admin/settings', label: 'Settings', icon: Settings },
+];
+
 const Sidebar = () => {
-  const location = useLocation();
   const { user, logout } = useAuth();
-
-  const menuItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/properties', icon: Building2, label: 'Properties' },
-    { path: '/units', icon: DoorOpen, label: 'Units' },
-    { path: '/tenants', icon: Users, label: 'Tenants' },
-    { path: '/payments', icon: DollarSign, label: 'Rent Payments' },
-    { path: '/maintenance', icon: Wrench, label: 'Maintenance' },
-    { path: '/reports', icon: BarChart3, label: 'Reports' },
-    { path: '/messages', icon: MessageSquare, label: 'Messages' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
-  ];
-
-  const isActive = (path) => location.pathname === path;
+  const location = useLocation();
 
   return (
-    <div className="w-64 bg-primary-900 min-h-screen fixed left-0 top-0 z-40">
-      <div className="p-6">
-        <h1 className="text-white text-xl font-bold">Rental SaaS</h1>
+    <aside className="w-72 bg-white border-r border-slate-200 h-full hidden md:flex flex-col">
+      <div className="px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-md bg-blue-50 flex items-center justify-center text-blue-600 font-semibold">RS</div>
+          <div>
+            <div className="text-lg font-semibold text-slate-900">RentSaaS</div>
+            <div className="text-xs text-slate-500">Super Admin</div>
+          </div>
+        </div>
       </div>
-      
-      <nav className="mt-6">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
+
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {menu.map((m) => {
+          const Icon = m.icon;
+          const active = location.pathname === m.to;
           return (
             <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
-                isActive(item.path)
-                  ? 'bg-primary-700 text-white border-r-4 border-primary-400'
-                  : 'text-primary-100 hover:bg-primary-800'
+              key={m.to}
+              to={m.to}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 text-sm transition-all ${
+                active ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <Icon className="w-5 h-5 mr-3" />
-              {item.label}
+              <div className={`${active ? 'bg-blue-100 text-blue-600' : 'bg-slate-50 text-slate-400'} p-2 rounded-md`}> 
+                <Icon className="w-4 h-4" />
+              </div>
+              <span>{m.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 p-6">
-        <button
-          onClick={logout}
-          className="flex items-center w-full px-6 py-3 text-sm font-medium text-primary-100 hover:bg-primary-800 rounded-lg transition-colors"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </button>
+      <div className="px-4 py-4 border-t border-slate-100">
+        <div className="bg-slate-50 p-3 rounded-lg">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+              {user?.name?.charAt(0)?.toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-slate-900">{user?.name || 'Super Admin'}</div>
+              <div className="text-xs text-slate-500">{user?.email}</div>
+            </div>
+          </div>
+          <div className="mt-2">
+            <button
+              onClick={logout}
+              className="w-full text-sm font-medium text-red-600 border border-red-100 rounded-md py-2 hover:bg-red-50"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <LogOut className="w-4 h-4" />
+                <span>Sign out</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 };
 

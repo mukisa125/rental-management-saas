@@ -3,6 +3,8 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
+const normalizeUser = (data) => data?.user || data;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     if (storedToken) {
       try {
         const response = await authAPI.getProfile();
-        setUser(response.data);
+        setUser(normalizeUser(response.data));
         setToken(storedToken);
       } catch (error) {
         localStorage.removeItem('token');
@@ -31,11 +33,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      const { token: newToken, ...userData } = response.data;
+      const normalizedUser = normalizeUser(response.data);
+      const { token: newToken, success, ...userData } = normalizedUser;
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
-      return { success: true };
+      return { success: true, user: userData };
     } catch (error) {
       return {
         success: false,
@@ -47,11 +50,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      const { token: newToken, ...user } = response.data;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      setUser(user);
-      return { success: true };
+      const normalizedUser = normalizeUser(response.data);
+      const { token: newToken, success, message, ...user } = normalizedUser;
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+        setUser(user);
+      }
+      return { success: true, user, message };
     } catch (error) {
       return {
         success: false,
@@ -60,10 +66,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      if (localStorage.getItem('token')) {
+        await authAPI.logout();
+      }
+    } catch (error) {
+      // Local logout should still happen if the server cannot record it.
+    }
+
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+  };
+
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await authAPI.updateProfile(profileData);
+      const normalizedUser = normalizeUser(response.data);
+      const { token: newToken, success, message, ...userData } = normalizedUser;
+
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+      }
+
+      setUser((currentUser) => ({ ...currentUser, ...userData }));
+      return { success: true, user: userData, message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to update profile',
+      };
+    }
   };
 
   const value = {
@@ -73,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
     isAuthenticated: !!user,
   };
 

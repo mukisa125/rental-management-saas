@@ -28,11 +28,42 @@ app.use('/api/tenants', require('./routes/tenantRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/maintenance', require('./routes/maintenanceRoutes'));
 app.use('/api/units', require('./routes/unitRoutes'));
+app.use('/api/owner', require('./routes/ownerRoutes'));
+app.use('/api/self-owner', require('./routes/selfOwnerRoutes'));
+app.use('/api/super-admin', require('./routes/superAdminRoutes'));
+app.use('/api/tenant-portal', require('./routes/tenantPortalRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/documents', require('./routes/documentRoutes'));
 
 // Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Rental Management API', version: '1.0.0' });
 });
+
+// Debug: list registered routes (helpful during development)
+try {
+  const routes = [];
+  app._router.stack.forEach((mw) => {
+    if (!mw) return;
+    if (mw.route && mw.route.path) {
+      const methods = Object.keys(mw.route.methods || {}).join(',').toUpperCase();
+      routes.push(`${methods} ${mw.route.path}`);
+      return;
+    }
+    if (mw.name === 'router' && mw.handle && Array.isArray(mw.handle.stack)) {
+      mw.handle.stack.forEach((r) => {
+        if (r && r.route && r.route.path) {
+          const methods = Object.keys(r.route.methods || {}).join(',').toUpperCase();
+          routes.push(`${methods} ${r.route.path}`);
+        }
+      });
+    }
+  });
+  console.log('\nRegistered routes:');
+  routes.sort().forEach(r => console.log(r));
+} catch (e) {
+  console.error('Error listing routes', e);
+}
 
 // Health check route
 app.get('/api/health', (req, res) => {

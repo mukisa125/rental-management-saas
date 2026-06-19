@@ -27,6 +27,7 @@ api.interceptors.request.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
 };
@@ -56,6 +57,7 @@ export const tenantAPI = {
   create: (data) => api.post('/tenants', data),
   update: (id, data) => api.put(`/tenants/${id}`, data),
   delete: (id) => api.delete(`/tenants/${id}`),
+  allocateWithAccount: (data) => api.post('/tenants/allocate/full', data),
 };
 
 // Payments API
@@ -75,6 +77,51 @@ export const maintenanceAPI = {
   create: (data) => api.post('/maintenance', data),
   update: (id, data) => api.put(`/maintenance/${id}`, data),
   delete: (id) => api.delete(`/maintenance/${id}`),
+};
+
+// Owner Portal API
+export const ownerAPI = {
+  getProperties: () => api.get('/owner/properties'),
+  getPropertyById: (id) => api.get(`/owner/properties/${id}`),
+  getFinancialSummary: (params) => api.get('/owner/financial-summary', { params }),
+  getRevenueTrend: () => api.get('/owner/revenue-trend'),
+  getOccupancyMetrics: () => api.get('/owner/occupancy-metrics'),
+  getMaintenanceRequests: (params) => api.get('/owner/maintenance', { params }),
+};
+
+// Owner Management API (Manager only)
+export const ownerManagementAPI = {
+  getAll: () => api.get('/owner/all'),
+  create: (data) => api.post('/owner/create', data),
+};
+
+// Tenant Portal API
+export const tenantPortalAPI = {
+  getDashboard: () => api.get('/tenant-portal/dashboard'),
+  getRentalInfo: () => api.get('/tenant-portal/rental-info'),
+  getPayments: (params) => api.get('/tenant-portal/payments', { params }),
+  getMaintenanceRequests: (params) => api.get('/tenant-portal/maintenance', { params }),
+  createMaintenanceRequest: (data) => api.post('/tenant-portal/maintenance', data),
+  getMaintenanceDetail: (id) => api.get(`/tenant-portal/maintenance/${id}`),
+  addMaintenanceComment: (id, data) => api.post(`/tenant-portal/maintenance/${id}/comments`, data),
+  getDocuments: () => api.get('/tenant-portal/documents'),
+};
+
+// Notifications API
+export const notificationAPI = {
+  getAll: (params) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/mark-all-read'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+};
+
+// Documents API
+export const documentAPI = {
+  getTenantDocuments: (tenantId) => api.get(`/documents/tenant/${tenantId}`),
+  getPropertyDocuments: (propertyId) => api.get(`/documents/property/${propertyId}`),
+  upload: (data) => api.post('/documents', data),
+  delete: (id) => api.delete(`/documents/${id}`),
 };
 
 export default api;

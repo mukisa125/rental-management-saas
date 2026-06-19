@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, DollarSign } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { paymentAPI, tenantAPI, propertyAPI } from '../services/api';
+import { formatUGX } from '../utils/currency';
 
 const RentPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -105,7 +106,7 @@ const RentPayments = () => {
       label: 'Property / Unit',
       render: (_, row) => `${row.property?.name || 'N/A'} / ${row.unit?.unitNumber || 'N/A'}`,
     },
-    { key: 'amount', label: 'Amount (UGX)', render: (amount) => amount?.toLocaleString() || '0' },
+    { key: 'amount', label: 'Amount', render: (amount) => formatUGX(amount) },
     {
       key: 'dueDate',
       label: 'Due Date',

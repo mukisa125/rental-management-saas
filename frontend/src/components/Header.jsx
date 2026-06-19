@@ -1,13 +1,47 @@
 import { Search, Bell, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 const Header = ({ title }) => {
   const { user } = useAuth();
+  const location = useLocation();
+
+  // Dynamic title based on route if not provided
+  const getTitleFromPath = () => {
+    const path = location.pathname;
+    
+    const titleMap = {
+      '/manager/dashboard': 'Dashboard',
+      '/manager/properties': 'Properties',
+      '/manager/units': 'Units',
+      '/manager/tenants': 'Tenants',
+      '/manager/payments': 'Rent Payments',
+      '/manager/maintenance': 'Maintenance',
+      '/manager/reports': 'Reports',
+      '/manager/settings': 'Settings',
+      '/owner/dashboard': 'Owner Dashboard',
+      '/owner/properties': 'My Properties',
+      '/owner/financials': 'Financials',
+      '/owner/maintenance': 'Maintenance',
+      '/owner/reports': 'Reports',
+      '/owner/profile': 'Profile',
+      '/tenant/dashboard': 'Dashboard',
+      '/tenant/my-rental': 'My Rental',
+      '/tenant/payments': 'Payment History',
+      '/tenant/maintenance': 'Maintenance Requests',
+      '/tenant/documents': 'Documents',
+      '/tenant/profile': 'Profile',
+    };
+
+    return titleMap[path] || 'Dashboard';
+  };
+
+  const displayTitle = title || getTitleFromPath();
 
   return (
     <header className="bg-white border-b border-gray-200 px-8 py-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
         
         <div className="flex items-center space-x-6">
           {/* Search Bar */}

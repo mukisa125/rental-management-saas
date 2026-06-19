@@ -10,7 +10,6 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true
   },
@@ -21,20 +20,95 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'staff'],
+    enum: ['super_admin', 'manager', 'owner', 'self_owner', 'tenant'],
     default: 'manager'
   },
-  phone: {
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved'
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  approvalDate: {
+    type: Date
+  },
+  rejectionReason: {
+    type: String
+  },
+  avatar: {
     type: String,
     trim: true
   },
   company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company'
+  },
+  companyName: {
     type: String,
     trim: true
+  },
+  permissions: [{
+    type: String,
+    trim: true
+  }],
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date
+  },
+  passwordChangedAt: {
+    type: Date
+  },
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorSecret: {
+    type: String
+  },
+  notificationPreferences: {
+    emailNotifications: { type: Boolean, default: true },
+    smsNotifications: { type: Boolean, default: false },
+    pushNotifications: { type: Boolean, default: true },
+    inAppNotifications: { type: Boolean, default: true }
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    { email: 1 },
+    { company: 1 },
+    { role: 1 },
+    { isActive: 1 },
+    { createdAt: -1 }
+  ]
 });
+
+// Soft delete support
+userSchema.query.active = function() {
+  return this.where({ deletedAt: null });
+};
 
 // Hash password before saving
 userSchema.pre('save', async function() {

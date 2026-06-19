@@ -2,7 +2,7 @@ import { Edit, Trash2, Eye } from 'lucide-react';
 
 const DataTable = ({ columns, data, onEdit, onDelete, onView }) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="responsive-table">
       <table className="w-full">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">

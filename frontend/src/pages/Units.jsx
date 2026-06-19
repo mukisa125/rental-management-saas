@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { unitAPI, propertyAPI } from '../services/api';
+import { formatUGX } from '../utils/currency';
 
 const Units = () => {
   const [units, setUnits] = useState([]);
@@ -89,7 +90,7 @@ const Units = () => {
       label: 'Property',
       render: (property) => property?.name || 'N/A',
     },
-    { key: 'rentAmount', label: 'Rent Amount (UGX)', render: (amount) => amount?.toLocaleString() || '0' },
+    { key: 'rentAmount', label: 'Rent Amount', render: (amount) => formatUGX(amount) },
     { key: 'bedrooms', label: 'Bedrooms' },
     { key: 'bathrooms', label: 'Bathrooms' },
     {

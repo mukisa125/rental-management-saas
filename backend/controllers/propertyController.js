@@ -23,6 +23,10 @@ const getPropertyById = async (req, res) => {
     const property = await Property.findById(req.params.id).populate('owner', 'name email');
     
     if (property) {
+      // Check if user owns the property
+      if (property.owner._id.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to access this property' });
+      }
       res.json(property);
     } else {
       res.status(404).json({ message: 'Property not found' });
@@ -82,6 +86,11 @@ const updateProperty = async (req, res) => {
     const property = await Property.findById(req.params.id);
 
     if (property) {
+      // Check if user owns the property
+      if (property.owner.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this property' });
+      }
+      
       property.name = req.body.name || property.name;
       property.location = req.body.location || property.location;
       property.description = req.body.description || property.description;
@@ -108,6 +117,11 @@ const deleteProperty = async (req, res) => {
     const property = await Property.findById(req.params.id);
 
     if (property) {
+      // Check if user owns the property
+      if (property.owner.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to delete this property' });
+      }
+      
       // Also delete all units associated with this property
       await Unit.deleteMany({ property: req.params.id });
       await property.deleteOne();
