@@ -65,9 +65,9 @@ const CreatePlanModal = ({ onClose, plan = null }) => {
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Plan name" className="p-2 border rounded" />
           <select value={targetUserType} onChange={e => setTargetUserType(e.target.value)} className="p-2 border rounded">
             <option value="all">All</option>
-            <option value="manager">Managers</option>
-            <option value="owner">Owners</option>
             <option value="self_owner">Self Owner</option>
+            <option value="tenant">Tenant</option>
+            <option value="super_admin">Super Admin</option>
           </select>
           <input value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} placeholder="Monthly price" type="number" className="p-2 border rounded" />
           <input value={annualPrice} onChange={e => setAnnualPrice(e.target.value)} placeholder="Annual price" type="number" className="p-2 border rounded" />

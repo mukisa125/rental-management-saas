@@ -11,6 +11,62 @@ const generateToken = (id) => {
   });
 };
 
+const ensureSelfOwnerCompany = async (user) => {
+  if (!user || user.role !== 'self_owner' || user.company) {
+    return user;
+  }
+
+  let linkedCompany = await Company.findOne({ email: user.email, deletedAt: null });
+
+  if (!linkedCompany && user.companyName) {
+    linkedCompany = await Company.findOne({ companyName: user.companyName, deletedAt: null });
+  }
+
+  if (!linkedCompany) {
+    const trialPlan = await SubscriptionPlan.findOne({ name: 'Trial', isActive: true })
+      || await SubscriptionPlan.findOne({ isActive: true }).sort({ displayOrder: 1, monthlyPrice: 1 });
+
+    if (!trialPlan) {
+      throw new Error('No active subscription plan found for company creation');
+    }
+
+    const baseCompanyName = (user.companyName && user.companyName.trim())
+      ? user.companyName.trim()
+      : `${user.name}'s Company`;
+
+    let uniqueCompanyName = baseCompanyName;
+    let suffix = 1;
+    while (await Company.findOne({ companyName: uniqueCompanyName })) {
+      suffix += 1;
+      uniqueCompanyName = `${baseCompanyName} ${suffix}`;
+    }
+
+    linkedCompany = await Company.create({
+      companyName: uniqueCompanyName,
+      ownerName: user.name,
+      email: user.email,
+      phone: user.phone || 'Not provided',
+      superAdmin: user._id,
+      subscriptionPlan: trialPlan._id,
+      subscriptionStatus: 'trial',
+      billingCycle: 'monthly',
+      trialEndsAt: trialPlan.trialDays
+        ? new Date(Date.now() + trialPlan.trialDays * 24 * 60 * 60 * 1000)
+        : undefined
+    });
+  }
+
+  user.company = linkedCompany._id;
+  if (!user.companyName) {
+    user.companyName = linkedCompany.companyName;
+  }
+
+  await user.save();
+  await user.populate('company');
+
+  return user;
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -25,8 +81,10 @@ const registerUser = async (req, res) => {
     }
 
     // Determine approval status based on role
-    // self_owner and manager roles require approval, others are auto-approved for now
-    const approvalStatus = (role === 'manager' || role === 'owner') ? 'pending' : 'approved';
+    // Manager, owner, and self-owner roles require super-admin approval.
+    const approvalStatus = (role === 'manager' || role === 'owner' || role === 'self_owner')
+      ? 'pending'
+      : 'approved';
 
     const userData = {
       name,
@@ -70,6 +128,9 @@ const registerUser = async (req, res) => {
 const registerCompany = async (req, res) => {
   try {
     const { companyName, ownerName, email, password, phone, address, role = 'self_owner' } = req.body;
+    const approvalStatus = (role === 'manager' || role === 'owner' || role === 'self_owner')
+      ? 'pending'
+      : 'approved';
 
     // Validate input
     if (!companyName || !ownerName || !email || !password) {
@@ -94,7 +155,8 @@ const registerCompany = async (req, res) => {
       email,
       password,
       phone,
-      role
+      role,
+      approvalStatus
     });
 
     // Get trial plan
@@ -126,12 +188,15 @@ const registerCompany = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Company registered successfully',
+      message: approvalStatus === 'pending'
+        ? 'Company registered successfully. Waiting for admin approval.'
+        : 'Company registered successfully',
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        approvalStatus: user.approvalStatus,
         company: company._id,
         companyName: company.companyName
       },
@@ -141,7 +206,7 @@ const registerCompany = async (req, res) => {
         subscriptionStatus: company.subscriptionStatus,
         trialEndsAt: company.trialEndsAt
       },
-      token: generateToken(user._id)
+      token: approvalStatus === 'pending' ? null : generateToken(user._id)
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -179,6 +244,8 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: `Your account has been rejected. Reason: ${user.rejectionReason}` });
     }
 
+    await ensureSelfOwnerCompany(user);
+
     // Check if company is active (if user has a company)
     if (user.company && !user.company.isActive) {
       return res.status(401).json({ message: 'Company account is inactive' });
@@ -193,6 +260,7 @@ const loginUser = async (req, res) => {
       email: user.email,
       role: user.role,
       phone: user.phone,
+      avatar: user.avatar,
       company: user.company?._id,
       companyName: user.company?.companyName || user.companyName,
       token: generateToken(user._id),
@@ -234,6 +302,9 @@ const updateUserProfile = async (req, res) => {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     user.phone = req.body.phone || user.phone;
+    if (req.body.avatar !== undefined) {
+      user.avatar = req.body.avatar;
+    }
 
     if (req.body.notificationPreferences) {
       user.notificationPreferences = { ...user.notificationPreferences, ...req.body.notificationPreferences };
@@ -269,6 +340,7 @@ const updateUserProfile = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         phone: updatedUser.phone,
+        avatar: updatedUser.avatar,
         company: updatedUser.company,
         token: generateToken(updatedUser._id),
       }

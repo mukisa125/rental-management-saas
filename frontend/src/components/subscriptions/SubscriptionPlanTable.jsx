@@ -5,10 +5,10 @@ import { formatUGX } from '../../utils/currency';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const SubscriptionPlanTable = ({ plans = [], refresh = () => {}, onEdit = () => {} }) => {
-  if (!Array.isArray(plans) || plans.length === 0) return <div className="bg-white p-6 rounded-2xl border border-slate-200">No plans created yet</div>;
+  if (!Array.isArray(plans) || plans.length === 0) return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500">No plans created yet</div>;
 
   return (
-    <div className="responsive-table bg-white rounded-2xl border border-slate-200 shadow-sm">
+    <div className="responsive-table rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="min-w-[900px] text-sm">
         <thead>
           <tr className="text-left text-slate-500 border-b border-slate-100 sticky top-0 bg-white">
@@ -29,12 +29,16 @@ const SubscriptionPlanTable = ({ plans = [], refresh = () => {}, onEdit = () => 
               <td className="px-6 py-4">{formatUGX(p.monthlyPrice ?? 0)}</td>
               <td className="px-6 py-4">{formatUGX(p.annualPrice ?? 0)}</td>
               <td className="px-6 py-4">{(p.features || []).join(', ')}</td>
-              <td className="px-6 py-4">{p.isActive ? 'Active' : 'Inactive'}</td>
+              <td className="px-6 py-4">
+                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${p.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {p.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => onEdit(p)} className="px-3 py-1 rounded-md border">Edit</button>
-                  <button className="px-3 py-1 rounded-md border">Deactivate</button>
-                  <button onClick={async () => { if (!confirm('Delete this plan?')) return; try { await api.delete(`/super-admin/plans/${p._id}`); refresh(); } catch (err) { if (err.response?.status === 404) { const token = localStorage.getItem('token'); try { await axios.delete(`${API_URL}/api/super-admin/plans/${p._id}`, { headers: { Authorization: `Bearer ${token}` } }); refresh(); return; } catch (e) { /* fallthrough */ } } alert(err.response?.data?.message || err.message || 'Failed to delete plan'); } }} className="px-3 py-1 rounded-md border text-rose-600">Delete</button>
+                  <button onClick={() => onEdit(p)} className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">Edit</button>
+                  <button className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">Deactivate</button>
+                  <button onClick={async () => { if (!confirm('Delete this plan?')) return; try { await api.delete(`/super-admin/plans/${p._id}`); refresh(); } catch (err) { if (err.response?.status === 404) { const token = localStorage.getItem('token'); try { await axios.delete(`${API_URL}/api/super-admin/plans/${p._id}`, { headers: { Authorization: `Bearer ${token}` } }); refresh(); return; } catch (e) { /* fallthrough */ } } alert(err.response?.data?.message || err.message || 'Failed to delete plan'); } }} className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50">Delete</button>
                 </div>
               </td>
             </tr>

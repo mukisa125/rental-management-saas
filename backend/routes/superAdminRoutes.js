@@ -10,6 +10,30 @@ router.use(authorize('super_admin'));
 
 // Dashboard
 router.get('/dashboard', superAdminController.getDashboard);
+router.get('/landlords', superAdminController.getLandlords);
+router.get('/tenants', superAdminController.getTenantsList);
+router.get('/property-seekers', superAdminController.getPropertySeekers);
+router.get('/property_seekers', superAdminController.getPropertySeekers);
+router.get('/vacant-listings', superAdminController.getVacantListings);
+router.get('/vacant-units', superAdminController.getVacantListings);
+router.get('/vacant_units', superAdminController.getVacantListings);
+router.get('/views-visits', superAdminController.getViewsVisits);
+router.get('/views-and-visits', superAdminController.getViewsVisits);
+router.get('/billing', superAdminController.getBilling);
+router.get('/billings', superAdminController.getBilling);
+router.get('/billing/summary', superAdminController.getBillingSummary);
+router.get('/billing-summary', superAdminController.getBillingSummary);
+router.get('/billings/summary', superAdminController.getBillingSummary);
+router.get('/billing/transactions', superAdminController.getBillingTransactions);
+router.get('/billing-transactions', superAdminController.getBillingTransactions);
+router.get('/billing_transactions', superAdminController.getBillingTransactions);
+router.put('/billing/transactions/:transactionId/status', superAdminController.updateBillingTransactionStatus);
+router.put('/billing-transactions/:transactionId/status', superAdminController.updateBillingTransactionStatus);
+router.put('/billing_transactions/:transactionId/status', superAdminController.updateBillingTransactionStatus);
+router.get('/reports', superAdminController.getReports);
+router.get('/support-tickets', superAdminController.getSupportTickets);
+router.get('/announcements', superAdminController.getAnnouncements);
+router.post('/announcements', superAdminController.createAnnouncement);
 
 // Customer Management
 router.get('/customers', superAdminController.getCustomers);
@@ -33,6 +57,14 @@ router.get('/plans', superAdminController.getPlans);
 router.post('/plans', superAdminController.createPlan);
 router.put('/plans/:planId', superAdminController.updatePlan);
 router.delete('/plans/:planId', superAdminController.deletePlan);
+router.get('/plan-assignments', superAdminController.getPlanAssignments);
+router.get('/plan_assignments', superAdminController.getPlanAssignments);
+router.post('/plan-assignments', superAdminController.createPlanAssignment);
+router.post('/plan_assignments', superAdminController.createPlanAssignment);
+router.put('/plan-assignments/:assignmentId', superAdminController.updatePlanAssignment);
+router.put('/plan_assignments/:assignmentId', superAdminController.updatePlanAssignment);
+router.delete('/plan-assignments/:assignmentId', superAdminController.deletePlanAssignment);
+router.delete('/plan_assignments/:assignmentId', superAdminController.deletePlanAssignment);
 
 // Settings
 router.get('/settings', superAdminController.getSettings);

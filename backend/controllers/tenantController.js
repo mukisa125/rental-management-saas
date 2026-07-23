@@ -193,23 +193,41 @@ const allocateTenant = async (req, res) => {
     let payments = [];
     if (createPaymentRecords) {
       const numMonths = parseInt(createPaymentRecords) || 12;
+      const companyId = req.company?._id || req.user.company;
+
       for (let month = 0; month < numMonths; month++) {
         const dueDate = new Date(leaseStart);
         dueDate.setMonth(dueDate.getMonth() + month + 1);
-        
-        // Set due date to last day of month or specific day
+
+        // Set due date to the last day of the billing month
         dueDate.setDate(1);
-        dueDate.setDate(0); // Last day of previous month = first day of current month - 1
+        dueDate.setDate(0); // Last day of previous month = first day of next month - 1
+
+        const paymentYear = dueDate.getFullYear();
+        const paymentMonth = dueDate.getMonth() + 1; // getMonth() is 0-indexed
+        const paymentPeriodStr = `${paymentYear}-${String(paymentMonth).padStart(2, '0')}`;
+        const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
         payments.push({
           tenant: tenant._id,
           property: property,
           unit: unit,
           owner: req.user._id,
+          company: companyId,
           amount: rentAmount,
+          amountPaid: 0,
+          balance: rentAmount,
+          remainingBalance: rentAmount,
           dueDate: dueDate,
+          paymentFor: `Rent for ${MONTH_NAMES[paymentMonth - 1]} ${paymentYear}`,
+          paymentPeriod: { month: paymentMonth, year: paymentYear },
+          paymentPeriodStr: paymentPeriodStr,
+          paymentMonth: paymentMonth,
+          paymentYear: paymentYear,
           status: 'pending',
-          paymentMethod: 'bank_transfer'
+          paymentMethod: 'bank_transfer',
+          isGenerated: true,
+          generatedFrom: 'tenant_allocation'
         });
       }
       await Payment.insertMany(payments);

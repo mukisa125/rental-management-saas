@@ -18,19 +18,33 @@ const Header = ({ title }) => {
       '/manager/payments': 'Rent Payments',
       '/manager/maintenance': 'Maintenance',
       '/manager/reports': 'Reports',
-      '/manager/settings': 'Settings',
-      '/owner/dashboard': 'Owner Dashboard',
-      '/owner/properties': 'My Properties',
-      '/owner/financials': 'Financials',
-      '/owner/maintenance': 'Maintenance',
-      '/owner/reports': 'Reports',
-      '/owner/profile': 'Profile',
+      '/manager/documents': 'Documents',
+      '/manager/profile': 'Profile',
       '/tenant/dashboard': 'Dashboard',
       '/tenant/my-rental': 'My Rental',
       '/tenant/payments': 'Payment History',
       '/tenant/maintenance': 'Maintenance Requests',
       '/tenant/documents': 'Documents',
       '/tenant/profile': 'Profile',
+      '/self-owner/dashboard': 'Dashboard',
+      '/self-owner/properties': 'Properties',
+      '/self-owner/units': 'Units',
+      '/self-owner/tenants': 'Tenants',
+      '/self-owner/payments': 'Payments',
+      '/self-owner/invoices': 'Rent & Invoices',
+      '/self-owner/maintenance': 'Maintenance',
+      '/self-owner/reports': 'Reports',
+      '/self-owner/documents': 'Documents',
+      '/self-owner/notices': 'Notices',
+      '/self-owner/profile': 'Profile',
+      '/self-owner/settings': 'Settings',
+      '/super-admin/dashboard': 'Dashboard',
+      '/super-admin/customers': 'Customers',
+      '/super-admin/system-monitor': 'System Monitor',
+      '/super-admin/activity-logs': 'Activity Logs',
+      '/super-admin/subscriptions': 'Subscriptions',
+      '/super-admin/reports': 'Revenue Analytics',
+      '/super-admin/settings': 'Settings',
     };
 
     return titleMap[path] || 'Dashboard';
@@ -67,7 +81,7 @@ const Header = ({ title }) => {
             </div>
             <div className="text-sm">
               <p className="font-medium text-gray-900">{user?.name || 'User'}</p>
-              <p className="text-gray-500 text-xs">{user?.role || 'Property Manager'}</p>
+              <p className="text-gray-500 text-xs">{user?.role || 'Account'}</p>
             </div>
           </div>
         </div>

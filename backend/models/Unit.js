@@ -30,6 +30,11 @@ const unitSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  description: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   bedrooms: {
     type: Number,
     default: 1
@@ -66,6 +71,11 @@ const unitSchema = new mongoose.Schema({
   }],
   images: [{
     url: String,
+    base64: { type: String, trim: true },
+    contentType: { type: String, trim: true },
+    originalName: { type: String, trim: true },
+    size: { type: Number, min: 0 },
+    isMain: { type: Boolean, default: false },
     uploadedAt: { type: Date, default: Date.now }
   }],
   documents: [{

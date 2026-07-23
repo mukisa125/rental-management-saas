@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Users, FileText, BarChart2, Layers, Settings, Zap, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from './BrandLogo';
+import { PLATFORM_NAME } from '../constants/brand';
 
 const menu = [
   { to: '/super-admin/dashboard', label: 'Dashboard', icon: Home },
@@ -21,9 +23,9 @@ const Sidebar = () => {
     <aside className="w-72 bg-white border-r border-slate-200 h-full hidden md:flex flex-col">
       <div className="px-6 py-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md bg-blue-50 flex items-center justify-center text-blue-600 font-semibold">RS</div>
+          <BrandLogo />
           <div>
-            <div className="text-lg font-semibold text-slate-900">RentSaaS</div>
+            <div className="text-lg font-semibold text-slate-900">{PLATFORM_NAME}</div>
             <div className="text-xs text-slate-500">Super Admin</div>
           </div>
         </div>

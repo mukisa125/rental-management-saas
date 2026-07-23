@@ -70,7 +70,7 @@ const SuperAdminSettings = () => {
                         />
                       ) : (
                         <span className="text-gray-600">
-                          {setting.isPublic ? setting.value : '••••••••'}
+                          {setting.isPublic ? setting.value : '********'}
                         </span>
                       )}
                     </td>

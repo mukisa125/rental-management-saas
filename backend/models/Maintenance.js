@@ -17,6 +17,37 @@ const commentSchema = new mongoose.Schema({
   }
 }, { _id: true });
 
+// Issue image schema with compression support
+const issueImageSchema = new mongoose.Schema({
+  base64: {
+    type: String,
+    trim: true
+  },
+  data: {
+    type: Buffer
+  },
+  contentType: {
+    type: String,
+    default: 'image/jpeg'
+  },
+  originalName: {
+    type: String,
+    trim: true
+  },
+  size: {
+    type: Number,
+    default: 0
+  },
+  uploadedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  uploadedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: true });
+
 const maintenanceSchema = new mongoose.Schema({
   company: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,10 +79,14 @@ const maintenanceSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  issueType: {
+    type: String,
+    enum: ['plumbing', 'electrical', 'door_window', 'roofing', 'painting', 'security', 'cleaning', 'appliance', 'internet', 'other'],
+    required: true
+  },
   category: {
     type: String,
-    enum: ['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'painting', 'cleaning', 'other'],
-    required: true
+    enum: ['plumbing', 'electrical', 'hvac', 'structural', 'appliances', 'painting', 'cleaning', 'other']
   },
   issue: {
     type: String,
@@ -70,8 +105,13 @@ const maintenanceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['submitted', 'assigned', 'in_progress', 'on_hold', 'completed', 'cancelled'],
-    default: 'submitted'
+    enum: ['pending', 'approved', 'in_progress', 'completed', 'rejected', 'cancelled', 'submitted', 'assigned', 'on_hold'],
+    default: 'pending'
+  },
+  source: {
+    type: String,
+    enum: ['tenant_portal', 'self_owner', 'manager'],
+    default: 'tenant_portal'
   },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
@@ -81,13 +121,26 @@ const maintenanceSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  reportedAt: {
+    type: Date,
+    default: Date.now
+  },
   assignedDate: {
+    type: Date
+  },
+  approvedAt: {
     type: Date
   },
   startDate: {
     type: Date
   },
+  startedAt: {
+    type: Date
+  },
   resolvedDate: {
+    type: Date
+  },
+  completedAt: {
     type: Date
   },
   expectedCompletionDate: {
@@ -97,11 +150,28 @@ const maintenanceSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  ownerNotes: {
+    type: String,
+    trim: true
+  },
+  tenantNotes: {
+    type: String,
+    trim: true
+  },
+  rejectionReason: {
+    type: String,
+    trim: true
+  },
+  issueImages: [issueImageSchema],
   images: [{
     url: String,
     uploadedAt: { type: Date, default: Date.now }
   }],
   comments: [commentSchema],
+  actualCost: {
+    type: Number,
+    default: 0
+  },
   cost: {
     type: Number,
     default: 0
@@ -110,12 +180,40 @@ const maintenanceSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'bank_transfer', 'mobile_money', 'card', 'other']
+  },
+  technicianName: {
+    type: String,
+    trim: true
+  },
+  technicianPhone: {
+    type: String,
+    trim: true
+  },
+  technicianService: {
+    type: String,
+    trim: true
+  },
+  technicianAddress: {
+    type: String,
+    trim: true
+  },
   vendor: {
     name: String,
     email: String,
     phone: String
   },
   invoiceUrl: {
+    type: String,
+    trim: true
+  },
+  contactPhone: {
+    type: String,
+    trim: true
+  },
+  availableTime: {
     type: String,
     trim: true
   },
@@ -130,7 +228,9 @@ const maintenanceSchema = new mongoose.Schema({
     { company: 1, status: 1 },
     { property: 1, unit: 1 },
     { owner: 1 },
-    { priority: 1 }
+    { tenant: 1 },
+    { priority: 1 },
+    { source: 1 }
   ]
 });
 

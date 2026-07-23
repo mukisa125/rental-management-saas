@@ -1,12 +1,25 @@
 const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
+
+const getCompanyId = (req) => req.company?._id || req.user?.company;
+
+const userNotificationFilter = (req, extra = {}) => {
+  const filter = {
+    user: req.user._id,
+    deletedAt: null,
+    ...extra
+  };
+  const company = getCompanyId(req);
+  if (company) filter.company = company;
+  return filter;
+};
 
 // Get user's notifications
 const getNotifications = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { isRead } = req.query;
 
-    let filter = { user: userId };
+    const filter = userNotificationFilter(req);
     if (isRead !== undefined) {
       filter.isRead = isRead === 'true';
     }
@@ -24,12 +37,7 @@ const getNotifications = async (req, res) => {
 // Get unread notification count
 const getUnreadCount = async (req, res) => {
   try {
-    const userId = req.user._id;
-
-    const unreadCount = await Notification.countDocuments({
-      user: userId,
-      isRead: false
-    });
+    const unreadCount = await Notification.countDocuments(userNotificationFilter(req, { isRead: false }));
 
     res.json({ unreadCount });
   } catch (error) {
@@ -42,8 +50,12 @@ const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    const notification = await Notification.findByIdAndUpdate(
-      notificationId,
+    if (!mongoose.Types.ObjectId.isValid(notificationId)) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    const notification = await Notification.findOneAndUpdate(
+      userNotificationFilter(req, { _id: notificationId }),
       { isRead: true, readAt: new Date() },
       { new: true }
     );
@@ -61,10 +73,8 @@ const markAsRead = async (req, res) => {
 // Mark all as read
 const markAllAsRead = async (req, res) => {
   try {
-    const userId = req.user._id;
-
     await Notification.updateMany(
-      { user: userId, isRead: false },
+      userNotificationFilter(req, { isRead: false }),
       { isRead: true, readAt: new Date() }
     );
 
@@ -79,7 +89,15 @@ const deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    const notification = await Notification.findByIdAndDelete(notificationId);
+    if (!mongoose.Types.ObjectId.isValid(notificationId)) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    const notification = await Notification.findOneAndUpdate(
+      userNotificationFilter(req, { _id: notificationId }),
+      { deletedAt: new Date() },
+      { new: true }
+    );
 
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
@@ -92,9 +110,10 @@ const deleteNotification = async (req, res) => {
 };
 
 // Create notification (internal use)
-const createNotification = async (userId, title, message, type, relatedEntity) => {
+const createNotification = async (company, userId, title, message, type, relatedEntity) => {
   try {
     const notification = await Notification.create({
+      company,
       user: userId,
       title,
       message,

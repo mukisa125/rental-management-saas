@@ -2,10 +2,10 @@ import React from 'react';
 
 const StatusDot = ({ status }) => {
   const map = {
-    operational: 'bg-green-500',
+    operational: 'bg-emerald-500',
     degraded: 'bg-orange-400',
-    down: 'bg-red-500',
-    unknown: 'bg-gray-300',
+    down: 'bg-rose-500',
+    unknown: 'bg-slate-300',
   };
   return <span className={`inline-block w-3 h-3 rounded-full ${map[status] || map.unknown}`} />;
 };
@@ -19,8 +19,8 @@ const SystemHealthCard = ({ systems = {} }) => {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-      <h3 className="text-sm font-semibold text-slate-900 mb-3">System Health</h3>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-black text-slate-900">System Health</h3>
       <div className="space-y-3">
         {items.map((it) => (
           <div key={it.key} className="flex items-center justify-between">

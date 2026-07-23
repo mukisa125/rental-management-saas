@@ -44,17 +44,81 @@ const paymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['paid', 'pending', 'overdue', 'partial', 'cancelled'],
+    enum: ['paid', 'pending', 'overdue', 'partial', 'failed', 'reversed', 'cancelled'],
     default: 'pending'
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'bank_transfer', 'mobile_money', 'card', 'check', 'online', 'other'],
+    enum: ['cash', 'bank_transfer', 'mobile_money', 'mtn_mobile_money', 'airtel_money', 'card', 'check', 'online', 'other'],
     default: 'cash'
+  },
+  paymentFor: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  monthlyRent: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  previousBalance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  remainingBalance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  paymentReference: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  paymentDate: {
+    type: Date
+  },
+  proofOfPayment: {
+    base64: { type: String, default: '' },
+    contentType: { type: String, default: '' },
+    originalName: { type: String, default: '' },
+    size: { type: Number, default: 0 },
+    uploadedAt: { type: Date }
   },
   paymentPeriod: {
     month: Number,
     year: Number
+  },
+  // YYYY-MM string representation of the billing month, e.g. "2026-01"
+  paymentPeriodStr: {
+    type: String,
+    trim: true
+  },
+  paymentYear: {
+    type: Number
+  },
+  paymentMonth: {
+    type: Number,
+    min: 1,
+    max: 12
+  },
+  // Running balance (amount - amountPaid); updated whenever a payment is recorded
+  balance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  // Indicates the document was auto-generated during tenant allocation
+  isGenerated: {
+    type: Boolean,
+    default: false
+  },
+  generatedFrom: {
+    type: String,
+    enum: ['tenant_allocation', 'manual', 'system', ''],
+    default: ''
   },
   transactionId: {
     type: String,
@@ -87,6 +151,10 @@ const paymentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  receivedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   verifiedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -107,14 +175,24 @@ const paymentSchema = new mongoose.Schema({
   ]
 });
 
-// Generate receipt number before saving
+// Generate a readable receipt number scoped to the owner and calendar year.
+// The unique compound index below also protects against a duplicate if two
+// payments are recorded at the same instant.
 paymentSchema.pre('save', async function() {
   if (!this.receiptNumber) {
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    this.receiptNumber = `RCP-${timestamp}-${random}`;
+    const year = (this.paymentDate || this.paidDate || new Date()).getFullYear();
+    const prefix = `RCPT-${year}-`;
+    const latest = await this.constructor
+      .findOne({ owner: this.owner, receiptNumber: new RegExp(`^${prefix}\\d{4}$`) })
+      .sort({ receiptNumber: -1 })
+      .select('receiptNumber')
+      .lean();
+    const currentSequence = Number.parseInt(latest?.receiptNumber?.slice(prefix.length), 10) || 0;
+    this.receiptNumber = `${prefix}${String(currentSequence + 1).padStart(4, '0')}`;
   }
 });
+
+paymentSchema.index({ owner: 1, receiptNumber: 1 }, { unique: true, sparse: true });
 
 // Soft delete support
 paymentSchema.query.active = function() {

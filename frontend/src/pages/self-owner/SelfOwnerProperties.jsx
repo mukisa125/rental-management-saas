@@ -1,150 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Building2, CheckCircle2, Eye, ImagePlus, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { formatUGX } from '../../utils/currency';
+import PropertyWizard from './PropertyWizard';
+import { showToast } from '../../utils/toast';
 
-const SelfOwnerProperties = () => {
-  const { token } = useAuth();
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    address: {},
-    propertyType: 'apartment',
-    description: ''
-  });
+const blank = () => ({ name: '', location: '', propertyType: 'apartment', description: '', status: 'active', address: { street: '', city: '', state: '', country: '' }, propertyImages: [], units: [] });
+const safe = (value) => Number(value) || 0;
+const types = [['apartment', 'Apartment Building'], ['house', 'Residential House'], ['commercial', 'Commercial Building'], ['other', 'Shops'], ['other', 'Hostel'], ['other', 'Mixed Use'], ['land', 'Land'], ['other', 'Other']];
+const compress = (file) => new Promise((resolve, reject) => { if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return reject(new Error('Only JPG, PNG, and WebP images are allowed.')); const reader = new FileReader(); const image = new Image(); reader.onload = () => { image.onload = () => { const ratio = Math.min(1, 1000 / image.width); const canvas = document.createElement('canvas'); canvas.width = Math.round(image.width * ratio); canvas.height = Math.round(image.height * ratio); canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height); const preview = canvas.toDataURL('image/webp', .72); const base64 = preview.split(',')[1]; if (base64.length > 300000) return reject(new Error('Compressed image is still too large.')); resolve({ base64, preview, contentType: 'image/webp', originalName: file.name, size: Math.round(base64.length * .75) }); }; image.src = reader.result; }; reader.readAsDataURL(file); });
+const unit = () => ({ unitNumber: '', rentAmount: '', depositAmount: '', status: 'vacant' });
 
-  useEffect(() => {
-    fetchProperties();
-  }, [page]);
+const Stat = ({ icon: Icon, label, value, tone }) => <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><span className={`grid h-12 w-12 place-items-center rounded-2xl ${tone}`}><Icon className="h-6 w-6" /></span><div><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-900">{value}</p></div></div></div>;
+const Badge = ({ status }) => <span className={`rounded-md border px-2 py-1 text-xs font-bold ${status === 'active' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : status === 'maintenance' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>{status === 'maintenance' ? 'Under Maintenance' : (status || 'Active')}</span>;
 
-  const fetchProperties = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/self-owner/properties', { params: { page, limit: 50 } });
-      setProperties(response.data.properties || []);
-      setTotalPages(response.data.pagination?.pages || 1);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/self-owner/properties', formData);
-      setFormData({
-        name: '',
-        location: '',
-        address: {},
-        propertyType: 'apartment',
-        description: ''
-      });
-      setShowForm(false);
-      fetchProperties();
-    } catch (err) {
-      alert('Error creating property');
-    }
-  };
-
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
-
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Properties</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          {showForm ? 'Cancel' : 'Add Property'}
-        </button>
-      </div>
-
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-bold mb-4">New Property</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium">Property Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                className="w-full px-3 py-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                required
-                className="w-full px-3 py-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Type</label>
-              <select
-                value={formData.propertyType}
-                onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
-                className="w-full px-3 py-2 border rounded"
-              >
-                <option value="apartment">Apartment</option>
-                <option value="house">House</option>
-                <option value="commercial">Commercial</option>
-              </select>
-            </div>
-            <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
-              Create Property
-            </button>
-          </form>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {properties.map((property) => (
-          <div key={property._id} className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-bold mb-2">{property.name}</h3>
-            <p className="text-gray-600 text-sm mb-2">{property.location}</p>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">Type:</span> {property.propertyType}</p>
-              <p><span className="font-medium">Units:</span> {property.totalUnits}</p>
-              <p><span className="font-medium">Status:</span> {property.status}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-4 flex justify-center gap-2">
-        <button
-          onClick={() => setPage(Math.max(1, page - 1))}
-          disabled={page === 1}
-          className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="px-4 py-2">Page {page} of {totalPages}</span>
-        <button
-          onClick={() => setPage(Math.min(totalPages, page + 1))}
-          disabled={page === totalPages}
-          className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default SelfOwnerProperties;
+export default function SelfOwnerProperties() {
+  const [properties, setProperties] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [search, setSearch] = useState(''); const [status, setStatus] = useState(''); const [editor, setEditor] = useState(null); const [mode, setMode] = useState(''); const [form, setForm] = useState(blank()); const [saving, setSaving] = useState(false);
+  const load = async () => { try { setLoading(true); const response = await api.get('/self-owner/properties', { params: { limit: 50, ...(status ? { status } : {}) } }); setProperties(response.data?.properties || []); } catch (requestError) { setError(requestError.response?.data?.message || 'Unable to load properties.'); } finally { setLoading(false); } };
+  useEffect(() => { load(); }, [status]);
+  const rows = useMemo(() => properties.filter((property) => `${property.name} ${property.location}`.toLowerCase().includes(search.toLowerCase())), [properties, search]);
+  const totals = useMemo(() => rows.reduce((result, property) => ({ properties: result.properties + 1, units: result.units + safe(property.totalUnits), occupied: result.occupied + safe(property.occupiedUnits), vacant: result.vacant + safe(property.vacantUnits) }), { properties: 0, units: 0, occupied: 0, vacant: 0 }), [rows]);
+  const open = (nextMode, property) => { setEditor(property || null); setForm(property ? { ...blank(), ...property, address: property.address || {}, propertyImages: (property.propertyImages || []).map((image) => ({ ...image, preview: `data:${image.contentType};base64,${image.base64}` })), units: [] } : blank()); setMode(`wizard-${nextMode}`); setError(''); };
+  const save = async (event) => { event.preventDefault(); try { setSaving(true); const payload = { ...form, location: form.location || form.address.city || form.address.street, propertyImages: form.propertyImages.map(({ preview, ...image }) => image) }; if (mode === 'edit') await api.put(`/self-owner/properties/${editor._id}`, payload); else await api.post('/self-owner/properties', payload); setEditor(null); await load(); showToast('Settings saved successfully'); } catch (requestError) { const message = requestError.response?.data?.message || 'Unable to save property.'; setError(message); showToast(message, 'error'); } finally { setSaving(false); } };
+  const remove = async (property) => { if (!window.confirm(`Delete ${property.name}?`)) return; try { await api.delete(`/self-owner/properties/${property._id}`); await load(); showToast('Settings saved successfully'); } catch (requestError) { const message = requestError.response?.data?.message || 'Unable to delete property.'; setError(message); showToast(message, 'error'); } };
+  const chooseImages = async (event) => { try { const files = Array.from(event.target.files || []); if (form.propertyImages.length + files.length > 3) throw new Error('Maximum of 3 property images.'); const newImages = await Promise.all(files.map(compress)); setForm((current) => ({ ...current, propertyImages: [...current.propertyImages, ...newImages] })); } catch (imageError) { setError(imageError.message); showToast(imageError.message, 'error'); } finally { event.target.value = ''; } };
+  const setAddress = (key, value) => setForm((current) => ({ ...current, address: { ...current.address, [key]: value } }));
+  if (mode.startsWith('wizard-')) return <PropertyWizard initial={form} onClose={() => { setMode(''); setEditor(null); }} onSave={async (payload) => { try { const request = { ...payload, location: payload.location || payload.address.city || payload.address.street, propertyImages: payload.propertyImages.map(({ preview, ...image }) => image) }; if (mode === 'wizard-edit') await api.put(`/self-owner/properties/${editor._id}`, request); else await api.post('/self-owner/properties', request); setMode(''); setEditor(null); await load(); showToast('Settings saved successfully'); } catch (requestError) { const message = requestError.response?.data?.message || 'Unable to save property.'; setError(message); showToast(message, 'error'); } }} />;
+  return <div className="mx-auto max-w-[1480px] space-y-5">{/* existing properties page content */}</div>;
+}

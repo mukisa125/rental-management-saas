@@ -18,8 +18,8 @@ export const LineSpark = ({ data = [], width = 200, height = 60, stroke = '#3b82
 
 const ChartCard = ({ title, children }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all">
-      <h3 className="text-sm font-semibold text-slate-900 mb-4">{title}</h3>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+      <h3 className="mb-4 text-sm font-black text-slate-900">{title}</h3>
       <div>{children}</div>
     </div>
   );

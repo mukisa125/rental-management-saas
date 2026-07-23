@@ -9,6 +9,8 @@ import {
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from '../BrandLogo';
+import { PLATFORM_NAME } from '../../constants/brand';
 
 const TenantSidebar = () => {
   const location = useLocation();
@@ -28,7 +30,10 @@ const TenantSidebar = () => {
   return (
     <div className="w-64 bg-primary-900 min-h-screen fixed left-0 top-0 z-40">
       <div className="p-6">
-        <h1 className="text-white text-xl font-bold">Rental SaaS</h1>
+        <div className="flex items-center gap-3">
+          <BrandLogo tone="onDark" />
+          <h1 className="text-xl font-bold text-white">{PLATFORM_NAME}</h1>
+        </div>
         <p className="text-primary-300 text-xs mt-1">Tenant Portal</p>
       </div>
 

@@ -18,7 +18,7 @@ const tenantSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     lowercase: true,
     trim: true
   },
@@ -78,6 +78,17 @@ const tenantSchema = new mongoose.Schema({
     enum: ['national_id', 'passport', 'driver_license', 'other'],
     default: 'national_id'
   },
+  gender: { type: String, enum: ['male', 'female', 'other', 'prefer_not_to_say'] },
+  dateOfBirth: Date,
+  occupation: { type: String, trim: true },
+  photo: {
+    base64: String, contentType: String, originalName: String, size: Number, uploadedAt: Date
+  },
+  identityAttachments: [{
+    base64: String, contentType: String, originalName: String, size: Number,
+    documentType: { type: String, enum: ['national_id_front', 'national_id_back', 'lc_letter'] },
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   documents: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Document'

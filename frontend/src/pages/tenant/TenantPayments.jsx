@@ -1,222 +1,268 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CalendarDays, CheckCircle2, Download, Eye, ReceiptText, Search } from 'lucide-react';
 import { tenantPortalAPI } from '../../services/api';
-import { DollarSign, Download, AlertCircle, CheckCircle } from 'lucide-react';
-import { formatUGX } from '../../utils/currency';
+import {
+  dateLabel,
+  dateTimeLabel,
+  EmptyTenantState,
+  FieldRow,
+  formatUGX,
+  methodLabel,
+  PageHeader,
+  safeNumber,
+  safeText,
+  TenantErrorState,
+  TenantLoadingState,
+  TenantPanel,
+  TenantStatCard,
+  TenantStatusBadge
+} from './TenantPortalUI';
 
-const TenantPayments = () => {
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('');
+const statuses = [
+  { value: 'all', label: 'All' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'overdue', label: 'Overdue' }
+];
 
-  useEffect(() => {
-    fetchPayments();
-  }, [filterStatus]);
-
-  const fetchPayments = async () => {
-    try {
-      const params = filterStatus ? { status: filterStatus } : {};
-      const response = await tenantPortalAPI.getPayments(params);
-      setPayments(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadReceipt = (payment) => {
-    // Implementation for downloading receipt
-    alert(`Downloading receipt for payment: ${payment.receiptNumber}`);
-  };
-
-  const handleDownloadInvoice = (payment) => {
-    // Implementation for downloading invoice
-    alert(`Downloading invoice for payment: ${payment._id}`);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  const statusColors = {
-    paid: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    overdue: 'bg-red-100 text-red-800',
-    partial: 'bg-orange-100 text-orange-800'
-  };
-
-  const totalPaid = payments
-    .filter(p => p.status === 'paid')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const totalPending = payments
-    .filter(p => p.status === 'pending')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const totalOverdue = payments
-    .filter(p => p.status === 'overdue')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
-        <p className="text-gray-600 mt-2">View and download your payment receipts and invoices</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Paid</p>
-              <p className="text-2xl font-bold text-green-600 mt-2">{formatUGX(totalPaid)}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600 mt-2">{formatUGX(totalPending)}</p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Overdue</p>
-              <p className="text-2xl font-bold text-red-600 mt-2">{formatUGX(totalOverdue)}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Filter Payments</h3>
-        <div className="flex space-x-2 flex-wrap">
-          <button
-            onClick={() => setFilterStatus('')}
-            className={`px-4 py-2 rounded-lg transition ${
-              filterStatus === '' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilterStatus('paid')}
-            className={`px-4 py-2 rounded-lg transition ${
-              filterStatus === 'paid' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Paid
-          </button>
-          <button
-            onClick={() => setFilterStatus('pending')}
-            className={`px-4 py-2 rounded-lg transition ${
-              filterStatus === 'pending' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => setFilterStatus('overdue')}
-            className={`px-4 py-2 rounded-lg transition ${
-              filterStatus === 'overdue' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Overdue
-          </button>
-        </div>
-      </div>
-
-      {/* Payment List */}
-      <div className="space-y-4">
-        {payments.length > 0 ? (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Due Date</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Amount</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Method</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Receipt</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {payments.map((payment) => (
-                    <tr key={payment._id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-sm">
-                        {new Date(payment.dueDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold">
-                        {formatUGX(payment.amount)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[payment.status]}`}>
-                          {payment.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        {payment.paymentMethod || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono text-gray-600">
-                        {payment.receiptNumber}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-2">
-                          {payment.status === 'paid' && (
-                            <button
-                              onClick={() => handleDownloadReceipt(payment)}
-                              className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
-                            >
-                              <Download className="w-4 h-4" />
-                              <span>Receipt</span>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDownloadInvoice(payment)}
-                            className="flex items-center space-x-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
-                          >
-                            <Download className="w-4 h-4" />
-                            <span>Invoice</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No payments found.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+const openPrintable = (payment, mode) => {
+  const title = mode === 'receipt' ? 'Payment Receipt' : 'Rent Invoice';
+  const documentNumber = safeText(mode === 'receipt' ? payment.receiptNumber : payment.invoiceNumber, mode === 'receipt' ? 'Pending receipt' : `INV-${String(payment._id || '').slice(-6).toUpperCase()}`);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>
+    body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#0f172a;padding:24px}.paper{max-width:760px;margin:0 auto;border:1px solid #e2e8f0;border-radius:16px;padding:22px}
+    h1{margin:0;color:#2563eb}.muted{color:#64748b}.row{display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding:10px 0}
+  </style></head><body><section class="paper"><h1>${title}</h1><p class="muted">${documentNumber}</p>
+    <div class="row"><strong>Amount</strong><span>${formatUGX(payment.amountPaid || payment.amount)}</span></div>
+    <div class="row"><strong>Status</strong><span>${safeText(payment.status)}</span></div>
+    <div class="row"><strong>Method</strong><span>${methodLabel(payment.paymentMethod)}</span></div>
+    <div class="row"><strong>Date</strong><span>${dateLabel(payment.paidDate || payment.paymentDate || payment.dueDate)}</span></div>
+    <p class="muted">Generated by RentProLink Tenant Portal.</p></section></body></html>`;
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
 };
 
-export default TenantPayments;
+export default function TenantPayments() {
+  const [payments, setPayments] = useState([]);
+  const [summary, setSummary] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [paymentMethod, setPaymentMethod] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadPayments = async () => {
+      try {
+        setLoading(true);
+        const response = await tenantPortalAPI.getPayments({
+          status: filterStatus,
+          paymentMethod,
+          search: search || undefined
+        });
+        const payload = response.data || {};
+        if (!cancelled) {
+          setPayments(Array.isArray(payload) ? payload : payload.payments || []);
+          setSummary(Array.isArray(payload) ? {} : payload.summary || {});
+          setError('');
+        }
+      } catch (requestError) {
+        if (!cancelled) setError(requestError?.response?.data?.message || 'Unable to load payments.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    const timer = window.setTimeout(loadPayments, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [filterStatus, paymentMethod, search]);
+
+  const computedSummary = useMemo(() => ({
+    totalPaid: safeNumber(summary.totalPaid) || payments.reduce((sum, payment) => sum + (payment.status === 'paid' ? safeNumber(payment.amountPaid || payment.amount) : 0), 0),
+    pending: safeNumber(summary.pending) || payments.reduce((sum, payment) => sum + (payment.status === 'pending' ? safeNumber(payment.amount) - safeNumber(payment.amountPaid) : 0), 0),
+    overdue: safeNumber(summary.overdue) || payments.reduce((sum, payment) => sum + (payment.status === 'overdue' ? safeNumber(payment.amount) - safeNumber(payment.amountPaid) : 0), 0),
+    lastPayment: summary.lastPayment || payments.find((payment) => payment.status === 'paid') || null,
+    numberOfPayments: safeNumber(summary.numberOfPayments) || payments.length
+  }), [payments, summary]);
+
+  const methods = useMemo(() => Array.from(new Set(payments.map((payment) => payment.paymentMethod).filter(Boolean))), [payments]);
+  const pendingPayment = payments.find((payment) => ['pending', 'overdue'].includes(payment.status));
+  const recentPayment = computedSummary.lastPayment;
+
+  if (loading && !payments.length) return <TenantLoadingState message="Loading payment history..." />;
+  if (error) return <TenantErrorState message={error} />;
+
+  return (
+    <div className="mx-auto max-w-[1500px] space-y-6">
+      <PageHeader title="Payment History" subtitle="View and download your payment receipts and invoices." />
+
+      {notice && <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{notice}</div>}
+
+      <section className="grid gap-5 md:grid-cols-3">
+        <TenantStatCard icon={CheckCircle2} label="Total Paid" value={formatUGX(computedSummary.totalPaid)} tone="green" />
+        <TenantStatCard icon={AlertCircle} label="Pending" value={formatUGX(computedSummary.pending)} tone="amber" />
+        <TenantStatCard icon={AlertCircle} label="Overdue" value={formatUGX(computedSummary.overdue)} tone="red" />
+      </section>
+
+      <TenantPanel>
+        <div className="grid gap-4 p-5 lg:grid-cols-[1.2fr_1fr_0.9fr_1.2fr]">
+          <div>
+            <p className="mb-3 text-sm font-bold text-slate-700">Filter by Status</p>
+            <div className="flex flex-wrap gap-2">
+              {statuses.map((status) => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setFilterStatus(status.value)}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold ${filterStatus === status.value ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="block">
+            <span className="mb-3 block text-sm font-bold text-slate-700">Date Range</span>
+            <span className="flex h-11 items-center gap-3 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">
+              <CalendarDays className="h-4 w-4 text-slate-400" />
+              01 May 2026 - 30 Jun 2026
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-3 block text-sm font-bold text-slate-700">Payment Method</span>
+            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500">
+              <option value="all">All Methods</option>
+              {methods.map((method) => <option key={method} value={method}>{methodLabel(method)}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-3 block text-sm font-bold text-slate-700">Search</span>
+            <span className="flex h-11 items-center gap-3 rounded-lg border border-slate-200 px-3">
+              <Search className="h-4 w-4 text-slate-400" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search receipts or invoices..." className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400" />
+            </span>
+          </label>
+        </div>
+      </TenantPanel>
+
+      <TenantPanel>
+        {payments.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-left text-sm">
+              <thead className="border-b border-slate-300 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-600">
+                <tr>
+                  {['Due Date', 'Amount', 'Status', 'Method', 'Receipt No', 'Invoice', 'Actions'].map((heading) => (
+                    <th key={heading} className="px-5 py-4">{heading}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {payments.map((payment) => (
+                  <tr key={payment._id} className="hover:bg-blue-50/40">
+                    <td className="px-5 py-4 font-semibold text-slate-700">{dateLabel(payment.dueDate || payment.createdAt)}</td>
+                    <td className="px-5 py-4 font-black text-slate-950">{formatUGX(payment.amount || payment.amountPaid)}</td>
+                    <td className="px-5 py-4"><TenantStatusBadge status={payment.status} /></td>
+                    <td className="px-5 py-4 font-semibold text-slate-700">{methodLabel(payment.paymentMethod)}</td>
+                    <td className="px-5 py-4 font-semibold text-slate-700">{safeText(payment.receiptNumber)}</td>
+                    <td className="px-5 py-4 font-semibold text-slate-700">{safeText(payment.invoiceNumber, `INV-${String(payment._id || '').slice(-6).toUpperCase()}`)}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setSelectedPayment(payment)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-xs font-black text-blue-600 hover:bg-blue-50">
+                          <Eye className="h-4 w-4" />
+                          View Receipt
+                        </button>
+                        <button type="button" onClick={() => openPrintable(payment, payment.status === 'paid' ? 'receipt' : 'invoice')} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">
+                          <Download className="h-4 w-4" />
+                          {payment.status === 'paid' ? 'Download Receipt' : 'Download Invoice'}
+                        </button>
+                        {payment.status !== 'paid' && (
+                          <button type="button" onClick={() => setNotice('Payment gateway is not connected yet. Please follow your landlord payment instructions.')} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white hover:bg-blue-700">
+                            Make Payment
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-5"><EmptyTenantState title="No payments found" description="Your payment records will appear here." /></div>
+        )}
+      </TenantPanel>
+
+      <section className="grid gap-5 lg:grid-cols-[1fr_0.78fr]">
+        <TenantPanel title="Payment Summary">
+          <dl className="grid gap-x-8 px-5 py-3 sm:grid-cols-2">
+            <FieldRow label="Total Paid" value={formatUGX(computedSummary.totalPaid)} valueClassName="text-emerald-600" />
+            <FieldRow label="Last Payment" value={dateLabel(recentPayment?.paidDate || recentPayment?.paymentDate || recentPayment?.createdAt)} />
+            <FieldRow label="Total Pending" value={formatUGX(computedSummary.pending)} valueClassName="text-amber-600" />
+            <FieldRow label="Payment Method" value={methodLabel(recentPayment?.paymentMethod)} />
+            <FieldRow label="Total Overdue" value={formatUGX(computedSummary.overdue)} valueClassName="text-rose-600" />
+            <FieldRow label="Number of Payments" value={computedSummary.numberOfPayments} />
+          </dl>
+        </TenantPanel>
+
+        <TenantPanel title="Next Payment Due">
+          <div className="grid gap-4 p-5 sm:grid-cols-2">
+            <div>
+              <p className="text-2xl font-black text-emerald-600">{dateLabel(pendingPayment?.dueDate)}</p>
+              <dl className="mt-5">
+                <FieldRow label="Amount" value={formatUGX(pendingPayment?.amount || recentPayment?.monthlyRent)} />
+                <FieldRow label="Payment Method" value={methodLabel(pendingPayment?.paymentMethod || recentPayment?.paymentMethod)} />
+              </dl>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-black text-slate-950">Recent Payment</p>
+              {recentPayment ? (
+                <div className="mt-4 flex items-start gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">Payment received</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">{formatUGX(recentPayment.amountPaid || recentPayment.amount)} for {safeText(recentPayment.paymentFor, 'rent')}</p>
+                    <p className="mt-2 text-xs font-semibold text-slate-400">{dateTimeLabel(recentPayment.paidDate || recentPayment.paymentDate || recentPayment.createdAt)}</p>
+                  </div>
+                </div>
+              ) : <p className="mt-4 text-sm font-medium text-slate-500">No recent payment recorded.</p>}
+            </div>
+          </div>
+        </TenantPanel>
+      </section>
+
+      {selectedPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+          <section className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <header className="border-b border-slate-200 px-5 py-4">
+              <p className="text-xs font-black uppercase tracking-wide text-blue-600">Payment Receipt</p>
+              <h2 className="mt-1 text-xl font-black text-slate-950">{safeText(selectedPayment.receiptNumber, 'Pending receipt')}</h2>
+            </header>
+            <dl className="px-5 py-3">
+              <FieldRow label="Amount" value={formatUGX(selectedPayment.amountPaid || selectedPayment.amount)} />
+              <FieldRow label="Status" value={<TenantStatusBadge status={selectedPayment.status} />} />
+              <FieldRow label="Method" value={methodLabel(selectedPayment.paymentMethod)} />
+              <FieldRow label="Due Date" value={dateLabel(selectedPayment.dueDate)} />
+              <FieldRow label="Payment Date" value={dateLabel(selectedPayment.paidDate || selectedPayment.paymentDate)} />
+            </dl>
+            <footer className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+              <button type="button" onClick={() => setSelectedPayment(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 hover:bg-white">Close</button>
+              <button type="button" onClick={() => openPrintable(selectedPayment, 'receipt')} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white hover:bg-blue-700">
+                <ReceiptText className="mr-2 inline h-4 w-4" />
+                Print
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}

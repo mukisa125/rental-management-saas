@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         setToken(newToken);
         setUser(user);
       }
-      return { success: true, user, message };
+      return { success: true, user, message, token: newToken, approvalStatus: user?.approvalStatus };
     } catch (error) {
       return {
         success: false,
@@ -101,6 +101,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const authenticateWithToken = (authData = {}) => {
+    const normalizedUser = normalizeUser(authData);
+    const newToken = authData.token || normalizedUser?.token;
+    const userData = normalizedUser?.user || normalizedUser;
+    if (!newToken || !userData) {
+      return { success: false, error: 'Login response was incomplete' };
+    }
+
+    const { token: ignoredToken, success, ...cleanUser } = userData;
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setUser(cleanUser);
+    return { success: true, user: cleanUser };
+  };
+
   const value = {
     user,
     token,
@@ -109,6 +124,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    authenticateWithToken,
     isAuthenticated: !!user,
   };
 

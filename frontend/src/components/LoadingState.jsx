@@ -1,9 +1,9 @@
 import React from 'react';
 
 const LoadingState = ({ message = 'Loading...' }) => (
-  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-300 mx-auto mb-4"></div>
-    <p className="text-sm text-slate-500">{message}</p>
+  <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+    <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+    <p className="text-sm font-semibold text-slate-500">{message}</p>
   </div>
 );
 

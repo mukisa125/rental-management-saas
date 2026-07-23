@@ -1,225 +1,198 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { authAPI } from '../../services/api';
-import { User, Lock, Bell, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Camera, Lock, Save, UserRound } from 'lucide-react';
+import { tenantPortalAPI } from '../../services/api';
+import {
+  PageHeader,
+  resolveAvatar,
+  safeText,
+  TenantErrorState,
+  TenantLoadingState,
+  TenantPanel
+} from './TenantPortalUI';
 
-const TenantProfile = () => {
-  const { user, logout } = useAuth();
+export default function TenantProfile() {
   const [profile, setProfile] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    avatar: user?.avatar || ''
+    fullName: '',
+    email: '',
+    phone: '',
+    whatsAppNumber: '',
+    avatar: '',
+    idNumber: '',
+    emergencyContact: { name: '', phone: '', relationship: '' }
   });
-  const [password, setPassword] = useState({
-    current: '',
-    new: '',
-    confirm: ''
-  });
-  const [notifications, setNotifications] = useState({
-    rentReminders: true,
-    maintenanceUpdates: true,
-    paymentConfirmations: true,
-    leaseRenewals: true
-  });
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    setProfile({ ...profile, [name]: value });
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await tenantPortalAPI.getProfile();
+        const user = response.data?.user || {};
+        const tenant = response.data?.tenant || {};
+        if (!cancelled) {
+          setProfile({
+            fullName: tenant.fullName || user.name || '',
+            email: tenant.email || user.email || '',
+            phone: tenant.phone || user.phone || '',
+            whatsAppNumber: user.whatsAppNumber || '',
+            avatar: user.avatar || tenant.photo?.base64 || '',
+            idNumber: tenant.idNumber || '',
+            emergencyContact: {
+              name: tenant.emergencyContact?.name || '',
+              phone: tenant.emergencyContact?.phone || '',
+              relationship: tenant.emergencyContact?.relationship || ''
+            }
+          });
+          setError('');
+        }
+      } catch (requestError) {
+        if (!cancelled) setError(requestError?.response?.data?.message || 'Unable to load profile.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPassword({ ...password, [name]: value });
-  };
+  const updateField = (key, value) => setProfile((current) => ({ ...current, [key]: value }));
+  const updateEmergency = (key, value) => setProfile((current) => ({
+    ...current,
+    emergencyContact: { ...current.emergencyContact, [key]: value }
+  }));
 
-  const handleNotificationChange = (key) => {
-    setNotifications({ ...notifications, [key]: !notifications[key] });
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      setLoading(true);
-      await authAPI.updateProfile(profile);
-      setMessage('Profile updated successfully');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Failed to update profile');
-    } finally {
-      setLoading(false);
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
     }
+    const reader = new FileReader();
+    reader.onload = () => updateField('avatar', String(reader.result || ''));
+    reader.onerror = () => setError('Unable to read selected image.');
+    reader.readAsDataURL(file);
   };
 
-  const handleChangePassword = async () => {
-    if (password.new !== password.confirm) {
-      setMessage('Passwords do not match');
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    if (password.newPassword && password.newPassword !== password.confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
     try {
-      setLoading(true);
-      await authAPI.updateProfile({ password: password.new });
-      setPassword({ current: '', new: '', confirm: '' });
-      setMessage('Password changed successfully');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Failed to change password');
+      setSaving(true);
+      const payload = {
+        ...profile,
+        name: profile.fullName,
+        ...(password.newPassword ? {
+          currentPassword: password.currentPassword,
+          newPassword: password.newPassword
+        } : {})
+      };
+      const response = await tenantPortalAPI.updateProfile(payload);
+      setMessage(response.data?.message || 'Profile updated successfully');
+      setError('');
+      setPassword({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || 'Unable to save profile.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
+  if (loading) return <TenantLoadingState message="Loading profile..." />;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
-      </div>
-
-      {message && (
-        <div className={`p-4 rounded-lg ${
-          message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-        }`}>
-          {message}
-        </div>
-      )}
-
-      {/* Profile Information */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-primary-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">{user?.name}</h2>
-            <p className="text-gray-600">{user?.email}</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              value={profile.name}
-              onChange={handleProfileChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={profile.email}
-              onChange={handleProfileChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              value={profile.phone}
-              onChange={handleProfileChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
-          </div>
-
-          <button
-            onClick={handleSaveProfile}
-            disabled={loading}
-            className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:bg-gray-400"
-          >
-            <Save className="w-4 h-4" />
-            <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+    <form onSubmit={saveProfile} className="mx-auto max-w-[1500px] space-y-6">
+      <PageHeader
+        title="Profile"
+        subtitle="Manage your personal details and password."
+        action={(
+          <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-60">
+            <Save className="h-4 w-4" />
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
-        </div>
-      </div>
+        )}
+      />
 
-      {/* Change Password */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <Lock className="w-5 h-5 text-primary-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
-        </div>
+      {error && <TenantErrorState message={error} />}
+      {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{message}</div>}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-            <input
-              type="password"
-              name="current"
-              value={password.current}
-              onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
+      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.9fr]">
+        <TenantPanel title="Personal Information">
+          <div className="grid gap-4 p-5 sm:grid-cols-2">
+            <div className="sm:col-span-2 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              {resolveAvatar(profile.avatar) ? (
+                <img src={resolveAvatar(profile.avatar)} alt={profile.fullName || 'Tenant'} className="h-20 w-20 rounded-full border border-slate-200 object-cover" />
+              ) : (
+                <span className="grid h-20 w-20 place-items-center rounded-full bg-blue-50 text-blue-600">
+                  <UserRound className="h-9 w-9" />
+                </span>
+              )}
+              <div>
+                <p className="text-sm font-black text-slate-950">{safeText(profile.fullName, 'Tenant')}</p>
+                <p className="mt-1 text-sm font-medium text-slate-500">{safeText(profile.email)}</p>
+                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">
+                  <Camera className="h-4 w-4" />
+                  Change Photo
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                </label>
+              </div>
+            </div>
+
+            <Input label="Full Name" value={profile.fullName} onChange={(value) => updateField('fullName', value)} />
+            <Input label="Email Address" type="email" value={profile.email} onChange={(value) => updateField('email', value)} />
+            <Input label="Phone Number" value={profile.phone} onChange={(value) => updateField('phone', value)} />
+            <Input label="WhatsApp Number" value={profile.whatsAppNumber} onChange={(value) => updateField('whatsAppNumber', value)} />
+            <Input label="National ID / Passport Number" value={profile.idNumber} onChange={(value) => updateField('idNumber', value)} />
+            <Input label="Emergency Contact Name" value={profile.emergencyContact.name} onChange={(value) => updateEmergency('name', value)} />
+            <Input label="Emergency Contact Phone" value={profile.emergencyContact.phone} onChange={(value) => updateEmergency('phone', value)} />
+            <Input label="Emergency Contact Relationship" value={profile.emergencyContact.relationship} onChange={(value) => updateEmergency('relationship', value)} />
           </div>
+        </TenantPanel>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-            <input
-              type="password"
-              name="new"
-              value={password.new}
-              onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
+        <TenantPanel title="Change Password">
+          <div className="space-y-4 p-5">
+            <div className="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <Lock className="h-5 w-5 text-blue-600" />
+              <p className="text-sm font-semibold text-slate-600">Leave password fields empty to keep your current password.</p>
+            </div>
+            <Input label="Current Password" type="password" value={password.currentPassword} onChange={(value) => setPassword((current) => ({ ...current, currentPassword: value }))} />
+            <Input label="New Password" type="password" value={password.newPassword} onChange={(value) => setPassword((current) => ({ ...current, newPassword: value }))} />
+            <Input label="Confirm New Password" type="password" value={password.confirmPassword} onChange={(value) => setPassword((current) => ({ ...current, confirmPassword: value }))} />
           </div>
+        </TenantPanel>
+      </section>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              name="confirm"
-              value={password.confirm}
-              onChange={handlePasswordChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-            />
-          </div>
-
-          <button
-            onClick={handleChangePassword}
-            disabled={loading}
-            className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:bg-gray-400"
-          >
-            <Lock className="w-4 h-4" />
-            <span>{loading ? 'Updating...' : 'Change Password'}</span>
-          </button>
+      <TenantPanel title="Rental Assignment">
+        <div className="p-5 text-sm font-medium leading-6 text-slate-600">
+          Your property, unit assignment, lease rent, and landlord link are controlled by your landlord. Contact your landlord if these details need to change.
         </div>
-      </div>
-
-      {/* Notification Preferences */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <Bell className="w-5 h-5 text-primary-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Notification Preferences</h3>
-        </div>
-
-        <div className="space-y-4">
-          {Object.entries(notifications).map(([key, value]) => (
-            <label key={key} className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={() => handleNotificationChange(key)}
-                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-              />
-              <span className="text-gray-700">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-    </div>
+      </TenantPanel>
+    </form>
   );
-};
+}
 
-export default TenantProfile;
+function Input({ label, value, onChange, type = 'text' }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-slate-700">{label}</span>
+      <input
+        type={type}
+        value={value || ''}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+      />
+    </label>
+  );
+}

@@ -1,8 +1,8 @@
 import React from 'react';
 
 const ChartPlaceholder = ({ height = 120 }) => (
-  <div className="w-full bg-gradient-to-r from-slate-50 to-white rounded-lg p-4 border border-slate-100" style={{height}}>
-    <div className="h-full flex items-center justify-center text-slate-300">Chart</div>
+  <div className="w-full rounded-lg border border-slate-100 bg-slate-50 p-4" style={{height}}>
+    <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-300">Chart</div>
   </div>
 );
 

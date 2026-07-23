@@ -35,6 +35,8 @@ const notificationSchema = new mongoose.Schema({
       'lease_renewal',
       'lease_expiring',
       'tenant_registered',
+      'tenant_application',
+      'tenant_approved',
       'announcement',
       'subscription_alert',
       'system_alert',
@@ -47,7 +49,7 @@ const notificationSchema = new mongoose.Schema({
   relatedEntity: {
     entityType: {
       type: String,
-      enum: ['property', 'tenant', 'payment', 'maintenance', 'lease', 'subscription', 'system', 'user'],
+      enum: ['property', 'tenant', 'tenant_application', 'payment', 'maintenance', 'lease', 'subscription', 'system', 'user'],
       required: false
     },
     entityId: {
@@ -71,12 +73,14 @@ const notificationSchema = new mongoose.Schema({
     inApp: { type: Boolean, default: true },
     email: { type: Boolean, default: false },
     sms: { type: Boolean, default: false },
+    whatsapp: { type: Boolean, default: false },
     push: { type: Boolean, default: false }
   },
   sentAt: {
     inApp: Date,
     email: Date,
     sms: Date,
+    whatsapp: Date,
     push: Date
   },
   actionUrl: {

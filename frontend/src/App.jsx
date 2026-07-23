@@ -2,33 +2,22 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
-import DashboardLayout from './layouts/DashboardLayout';
-import OwnerLayout from './layouts/OwnerLayout';
+import SystemToastHost from './components/SystemToastHost';
 import TenantLayout from './layouts/TenantLayout';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SelfOwnerLayout from './layouts/SelfOwnerLayout';
-
-// Manager Pages
-import Dashboard from './pages/Dashboard';
-import Properties from './pages/Properties';
-import Units from './pages/Units';
-import Tenants from './pages/Tenants';
-import RentPayments from './pages/RentPayments';
-import Maintenance from './pages/Maintenance';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-
-// Owner Pages
-import OwnerDashboard from './pages/owner/OwnerDashboard';
-import OwnerProperties from './pages/owner/OwnerProperties';
-import OwnerFinancials from './pages/owner/OwnerFinancials';
-import OwnerMaintenance from './pages/owner/OwnerMaintenance';
-import OwnerReports from './pages/owner/OwnerReports';
-import OwnerProfile from './pages/owner/OwnerProfile';
+import ManagerLayout from './layouts/ManagerLayout';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
-import SuperAdminCustomers from './pages/super-admin/SuperAdminCustomers';
+import SuperAdminLandlords from './pages/super-admin/SuperAdminLandlords';
+import SuperAdminTenants from './pages/super-admin/SuperAdminTenants';
+import SuperAdminPropertySeekers from './pages/super-admin/SuperAdminPropertySeekers';
+import SuperAdminVacantListings from './pages/super-admin/SuperAdminVacantListings';
+import SuperAdminViewsVisits from './pages/super-admin/SuperAdminViewsVisits';
+import SuperAdminBilling from './pages/super-admin/SuperAdminBilling';
+import SuperAdminAnnouncements from './pages/super-admin/SuperAdminAnnouncements';
+import SuperAdminSupportTickets from './pages/super-admin/SuperAdminSupportTickets';
 import SuperAdminSystemMonitor from './pages/super-admin/SuperAdminSystemMonitor';
 import SuperAdminActivityLogs from './pages/super-admin/SuperAdminActivityLogs';
 import SuperAdminSubscriptionAnalytics from './pages/super-admin/SuperAdminSubscriptionAnalytics';
@@ -38,7 +27,7 @@ import SuperAdminSettings from './pages/super-admin/SuperAdminSettings';
 
 // Self Owner Pages
 import SelfOwnerDashboard from './pages/self-owner/SelfOwnerDashboard';
-import SelfOwnerProperties from './pages/self-owner/SelfOwnerProperties';
+import SelfOwnerProperties from './pages/self-owner/SelfOwnerPropertiesEnhanced';
 import SelfOwnerUnits from './pages/self-owner/SelfOwnerUnits';
 import SelfOwnerTenants from './pages/self-owner/SelfOwnerTenants';
 import SelfOwnerPayments from './pages/self-owner/SelfOwnerPayments';
@@ -48,6 +37,7 @@ import SelfOwnerDocuments from './pages/self-owner/SelfOwnerDocuments';
 import SelfOwnerProfile from './pages/self-owner/SelfOwnerProfile';
 import SelfOwnerInvoices from './pages/self-owner/SelfOwnerInvoices';
 import SelfOwnerNotices from './pages/self-owner/SelfOwnerNotices';
+import SelfOwnerSettings from './pages/self-owner/SelfOwnerSettings';
 
 // Tenant Pages
 import TenantDashboard from './pages/tenant/TenantDashboard';
@@ -55,11 +45,16 @@ import TenantMyRental from './pages/tenant/TenantMyRental';
 import TenantPayments from './pages/tenant/TenantPayments';
 import TenantMaintenance from './pages/tenant/TenantMaintenance';
 import TenantDocuments from './pages/tenant/TenantDocuments';
+import TenantNotices from './pages/tenant/TenantNotices';
 import TenantProfile from './pages/tenant/TenantProfile';
+import TenantSettings from './pages/tenant/TenantSettings';
 
 // Auth Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import TenantApplication from './pages/TenantApplication';
+import ServiceProviderRequestForm from './pages/ServiceProviderRequestForm';
+import PropertySeekerPage from './pages/property-seeker/PropertySeekerPage';
 import { getDashboardPath } from './utils/authRoutes';
 
 function AppContent() {
@@ -78,156 +73,17 @@ function AppContent() {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-
-      {/* Manager Routes - Explicit routing */}
-      <Route
-        path="/manager/dashboard"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Dashboard />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/properties"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Properties />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/units"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Units />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/tenants"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Tenants />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/payments"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <RentPayments />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/maintenance"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Maintenance />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/reports"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Reports />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/settings"
-        element={
-          <RoleProtectedRoute allowedRoles={['manager']}>
-            <DashboardLayout>
-              <Settings />
-            </DashboardLayout>
-          </RoleProtectedRoute>
-        }
-      />
-
-      {/* Owner Routes */}
-      <Route
-        path="/owner/dashboard"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerDashboard />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/owner/properties"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerProperties />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/owner/financials"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerFinancials />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/owner/maintenance"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerMaintenance />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/owner/reports"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerReports />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
-      <Route
-        path="/owner/profile"
-        element={
-          <RoleProtectedRoute allowedRoles={['owner', 'manager']}>
-            <OwnerLayout>
-              <OwnerProfile />
-            </OwnerLayout>
-          </RoleProtectedRoute>
-        }
-      />
+      <Route path="/tenant-application/:token" element={<TenantApplication />} />
+      <Route path="/service-provider/request" element={<ServiceProviderRequestForm />} />
+      <Route path="/property-seekers" element={<PropertySeekerPage />} />
+      <Route path="/property-seekers/listing/:listingId" element={<PropertySeekerPage />} />
+      <Route path="/property-seeker/dashboard" element={<PropertySeekerPage />} />
 
       {/* Tenant Routes */}
       <Route
         path="/tenant/dashboard"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantDashboard />
             </TenantLayout>
@@ -237,7 +93,17 @@ function AppContent() {
       <Route
         path="/tenant/my-rental"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
+            <TenantLayout>
+              <TenantMyRental />
+            </TenantLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/tenant/my-property"
+        element={
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantMyRental />
             </TenantLayout>
@@ -247,7 +113,7 @@ function AppContent() {
       <Route
         path="/tenant/payments"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantPayments />
             </TenantLayout>
@@ -257,7 +123,7 @@ function AppContent() {
       <Route
         path="/tenant/maintenance"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantMaintenance />
             </TenantLayout>
@@ -267,7 +133,7 @@ function AppContent() {
       <Route
         path="/tenant/documents"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantDocuments />
             </TenantLayout>
@@ -277,9 +143,29 @@ function AppContent() {
       <Route
         path="/tenant/profile"
         element={
-          <RoleProtectedRoute allowedRoles={['tenant', 'manager']}>
+          <RoleProtectedRoute requiredRole="tenant">
             <TenantLayout>
               <TenantProfile />
+            </TenantLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/tenant/notices"
+        element={
+          <RoleProtectedRoute requiredRole="tenant">
+            <TenantLayout>
+              <TenantNotices />
+            </TenantLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/tenant/settings"
+        element={
+          <RoleProtectedRoute requiredRole="tenant">
+            <TenantLayout>
+              <TenantSettings />
             </TenantLayout>
           </RoleProtectedRoute>
         }
@@ -297,11 +183,61 @@ function AppContent() {
         }
       />
       <Route
+        path="/super-admin/landlords"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminLandlords />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
         path="/super-admin/customers"
         element={
           <RoleProtectedRoute requiredRole="super_admin">
             <SuperAdminLayout>
-              <SuperAdminCustomers />
+              <SuperAdminLandlords />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/tenants"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminTenants />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/property-seekers"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminPropertySeekers />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/vacant-listings"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminVacantListings />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/views-visits"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminViewsVisits />
             </SuperAdminLayout>
           </RoleProtectedRoute>
         }
@@ -337,11 +273,41 @@ function AppContent() {
         }
       />
       <Route
+        path="/super-admin/billing"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminBilling />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
         path="/super-admin/reports"
         element={
           <RoleProtectedRoute requiredRole="super_admin">
             <SuperAdminLayout>
               <SuperAdminRevenueAnalytics />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/support-tickets"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminSupportTickets />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/announcements"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminAnnouncements />
             </SuperAdminLayout>
           </RoleProtectedRoute>
         }
@@ -353,6 +319,106 @@ function AppContent() {
             <SuperAdminLayout>
               <SuperAdminSettings />
             </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/subscription-analytics"
+        element={
+          <RoleProtectedRoute requiredRole="super_admin">
+            <SuperAdminLayout>
+              <SuperAdminSubscriptionAnalytics />
+            </SuperAdminLayout>
+          </RoleProtectedRoute>
+        }
+      />
+
+      {/* Manager Routes */}
+      <Route
+        path="/manager/dashboard"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerDashboard />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/properties"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerProperties />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/units"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout><SelfOwnerUnits /></ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/tenants"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerTenants />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/payments"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerPayments />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/maintenance"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerMaintenance />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/reports"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerReports />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/documents"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerDocuments />
+            </ManagerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager/profile"
+        element={
+          <RoleProtectedRoute requiredRole="manager">
+            <ManagerLayout>
+              <SelfOwnerProfile />
+            </ManagerLayout>
           </RoleProtectedRoute>
         }
       />
@@ -453,11 +519,21 @@ function AppContent() {
         }
       />
       <Route
+        path="/self-owner/settings"
+        element={
+          <RoleProtectedRoute requiredRole="self_owner">
+            <SelfOwnerLayout>
+              <SelfOwnerSettings />
+            </SelfOwnerLayout>
+          </RoleProtectedRoute>
+        }
+      />
+      <Route
         path="/self-owner/profile"
         element={
           <RoleProtectedRoute requiredRole="self_owner">
             <SelfOwnerLayout>
-              <SelfOwnerProfile />
+              <SelfOwnerSettings />
             </SelfOwnerLayout>
           </RoleProtectedRoute>
         }
@@ -492,6 +568,7 @@ function App() {
     <AuthProvider>
       <Router>
         <AppContent />
+        <SystemToastHost />
       </Router>
     </AuthProvider>
   );

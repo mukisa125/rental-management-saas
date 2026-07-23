@@ -17,12 +17,67 @@ const propertySchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  generalArea: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  googleMapsLocation: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  formattedAddress: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  placeId: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  latitude: {
+    type: Number,
+    default: null
+  },
+  longitude: {
+    type: Number,
+    default: null
+  },
+  locationVisibility: {
+    type: String,
+    enum: ['public', 'tenants_only', 'private'],
+    default: 'public'
+  },
+  publishToMarketplace: {
+    type: Boolean,
+    default: true
+  },
+  showOnMap: {
+    type: Boolean,
+    default: true
+  },
+  exactLocationLocked: {
+    type: Boolean,
+    default: true
+  },
+  allowVisitBooking: {
+    type: Boolean,
+    default: true
+  },
+  allowContactReveal: {
+    type: Boolean,
+    default: true
+  },
   address: {
     street: String,
     city: String,
     state: String,
     zipCode: String,
     country: String,
+    formattedAddress: String,
+    placeId: String,
     gps: {
       latitude: Number,
       longitude: Number
@@ -59,6 +114,15 @@ const propertySchema = new mongoose.Schema({
   },
   images: [{
     url: String,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+  // Compressed image data is stored with the property, not as a disk path.
+  propertyImages: [{
+    base64: { type: String, trim: true },
+    contentType: { type: String, trim: true },
+    originalName: { type: String, trim: true },
+    size: { type: Number, min: 0 },
+    isMain: { type: Boolean, default: false },
     uploadedAt: { type: Date, default: Date.now }
   }],
   amenities: [{

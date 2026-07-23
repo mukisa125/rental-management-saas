@@ -1,194 +1,196 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Activity,
+  AlertTriangle,
   ArrowRight,
+  BarChart3,
   Building2,
   CheckCircle2,
-  CircleDollarSign,
   CreditCard,
   FileText,
-  LineChart,
+  Home,
   Loader2,
   RefreshCw,
-  ShieldCheck,
-  TrendingDown,
-  TrendingUp,
-  UserPlus,
-  Users,
-  WalletCards,
-  XCircle,
+  UserSearch,
+  Users
 } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import api from '../../services/api';
 import { formatUGX } from '../../utils/currency';
 
-const compact = new Intl.NumberFormat('en-US');
+const numberFormat = new Intl.NumberFormat('en-US');
 
-const statusColors = {
-  active: '#18bf6b',
-  trial: '#3b82f6',
-  pastDue: '#f5b640',
-  expired: '#ff5b5f',
-  cancelled: '#94a3b8',
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const planColors = ['#2f7df6', '#14b8a6', '#f59e0b', '#7c3aed', '#ef4444'];
-
-const formatTrend = (value = 0) => {
-  const number = Number(value) || 0;
-  return `${number > 0 ? '+' : ''}${number.toFixed(1)}%`;
+const safeDate = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleDateString();
 };
 
-const formatDate = (value) => {
-  if (!value) return 'Today';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+const trendTone = (trend) => {
+  const numericTrend = safeNumber(trend);
+  if (numericTrend > 0) return 'positive';
+  if (numericTrend < 0) return 'negative';
+  return 'neutral';
 };
 
-const timeAgo = (value) => {
-  if (!value) return 'Just now';
-  const diff = Date.now() - new Date(value).getTime();
-  const minutes = Math.max(1, Math.round(diff / 60000));
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
+const toneStyles = {
+  blue: 'bg-blue-50 text-blue-600 border-blue-100',
+  purple: 'bg-blue-50 text-blue-600 border-blue-100',
+  cyan: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+  green: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  amber: 'bg-amber-50 text-amber-600 border-amber-100',
+  red: 'bg-rose-50 text-rose-600 border-rose-100',
+  pink: 'bg-blue-50 text-blue-600 border-blue-100',
+  teal: 'bg-emerald-50 text-emerald-600 border-emerald-100'
 };
 
-const Card = ({ children, className = '' }) => (
-  <section className={`rounded-[10px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)] ${className}`}>
+const trendStyles = {
+  positive: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  negative: 'bg-rose-50 text-rose-700 border-rose-200',
+  neutral: 'bg-slate-100 text-slate-600 border-slate-200'
+};
+
+const SectionCard = ({ title, subtitle, viewAllLink, children, className = '' }) => (
+  <section className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md ${className}`}>
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <div>
+        <h2 className="text-base font-bold text-slate-900">{title}</h2>
+        {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
+      </div>
+      {viewAllLink ? (
+        <a href={viewAllLink} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          View all <ArrowRight className="h-3.5 w-3.5" />
+        </a>
+      ) : null}
+    </div>
     {children}
   </section>
 );
 
-const TrendPill = ({ value = 0, danger = false }) => {
-  const isDown = danger || Number(value) < 0;
-  const Icon = isDown ? TrendingDown : TrendingUp;
-
+const SummaryCard = ({ icon: Icon, label, value, subtitle, trend, tone }) => {
+  const trendType = trendTone(trend);
+  const toneClass = toneStyles[tone] || toneStyles.blue;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-      isDown ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'
-    }`}>
-      <Icon className="h-3.5 w-3.5" />
-      {formatTrend(value)}
-    </span>
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${trendStyles[trendType]}`}>
+          {trendType === 'positive' ? '+' : trendType === 'negative' ? '-' : ''}
+          {Math.abs(safeNumber(trend)).toFixed(1)}%
+        </span>
+      </div>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-black text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+    </article>
   );
 };
 
-const MetricCard = ({ label, value, icon: Icon, trend, tone = 'blue', danger = false }) => {
-  const tones = {
-    blue: 'from-blue-50 text-blue-600 ring-blue-100',
-    purple: 'from-violet-50 text-violet-600 ring-violet-100',
-    teal: 'from-teal-50 text-teal-600 ring-teal-100',
-    green: 'from-emerald-50 text-emerald-600 ring-emerald-100',
-    red: 'from-red-50 text-red-500 ring-red-100',
-  };
-
-  return (
-    <Card className={`p-4 sm:p-5 ${danger ? 'border-red-200 bg-red-50/30' : ''}`}>
-      <div className="flex items-center gap-4">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br ${tones[tone]} ring-1`}>
-          <Icon className="h-6 w-6" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-500">{label}</p>
-          <p className="mt-1 truncate text-2xl font-bold tracking-normal text-slate-950">{value}</p>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-slate-500">
-        <TrendPill value={trend} danger={danger} />
-        <span>{label === 'Annual Revenue' ? 'vs last year' : 'vs last month'}</span>
-      </div>
-    </Card>
-  );
-};
-
-const PanelHeader = ({ title, actionLabel, children }) => (
-  <div className="mb-4 flex items-start justify-between gap-3">
-    <div>
-      <h2 className="text-base font-bold text-slate-950">{title}</h2>
-      {children}
+const HorizontalMetric = ({ label, value, percent, colorClass = 'bg-blue-500' }) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
-    {actionLabel && (
-      <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-        {actionLabel}
-      </button>
-    )}
-  </div>
-);
-
-const DonutChart = ({ data, centerLabel, colors }) => (
-  <div className="relative h-44 w-full">
-    <ResponsiveContainer>
-      <PieChart>
-        <Pie data={data} dataKey="value" innerRadius="58%" outerRadius="78%" paddingAngle={2} stroke="none">
-          {data.map((entry, index) => (
-            <Cell key={entry.name} fill={colors[index] || entry.color || '#2563eb'} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      <span className="text-2xl font-black text-slate-950">{compact.format(centerLabel)}</span>
-      <span className="text-xs font-semibold text-slate-500">Total</span>
+    <div className="h-2 rounded-full bg-slate-100">
+      <div className={`h-2 rounded-full ${colorClass}`} style={{ width: `${Math.max(0, Math.min(percent, 100))}%` }} />
     </div>
-  </div>
-);
-
-const EmptyPanel = ({ label }) => (
-  <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 text-sm font-semibold text-slate-400">
-    {label}
   </div>
 );
 
 const SuperAdminDashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get('/super-admin/dashboard');
-      setDashboardData(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState('');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [transactionFilter, setTransactionFilter] = useState('all');
+  const [activityFilter, setActivityFilter] = useState('all');
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    let mounted = true;
+    const loadDashboard = async () => {
+      try {
+        if (mounted) {
+          setLoading(true);
+          setError('');
+        }
+        const response = await api.get('/super-admin/dashboard');
+        if (mounted) {
+          setDashboardData(response.data || {});
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err.response?.data?.message || err.message || 'Failed to load dashboard');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    loadDashboard();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshNonce]);
 
   const kpis = dashboardData?.kpis || {};
-  const charts = dashboardData?.charts || {};
-  const activities = dashboardData?.activities || [];
-  const transactions = dashboardData?.transactions || [];
-  const systems = dashboardData?.systems || [];
-  const plans = dashboardData?.plans || [];
+  const platformOverview = dashboardData?.platformOverview || {};
+  const marketplaceActivity = dashboardData?.marketplaceActivity || {};
+  const revenueBilling = dashboardData?.revenueBilling || {};
+  const propertySeekerActivity = dashboardData?.propertySeekerActivity || {};
+  const landlordsSummary = Array.isArray(dashboardData?.landlordsSummary) ? dashboardData.landlordsSummary : [];
+  const landlordUnitBreakdown = dashboardData?.landlordUnitBreakdown || {};
+  const transactions = Array.isArray(dashboardData?.transactions) ? dashboardData.transactions : [];
+  const systems = Array.isArray(dashboardData?.systems) ? dashboardData.systems : [];
+  const activities = Array.isArray(dashboardData?.activities) ? dashboardData.activities : [];
 
-  const statusData = useMemo(() => (
-    Object.entries(charts.subscriptionsByStatus || {})
-      .filter(([, value]) => Number(value) > 0)
-      .map(([name, value]) => ({ name, value, color: statusColors[name] || '#64748b' }))
-  ), [charts.subscriptionsByStatus]);
+  const summaryCards = [
+    { icon: Building2, label: 'Total Landlords', value: numberFormat.format(safeNumber(kpis.totalLandlords)), trend: kpis.landlordsTrend, subtitle: 'Registered landlord accounts', tone: 'blue' },
+    { icon: Users, label: 'Total Tenants', value: numberFormat.format(safeNumber(kpis.totalTenants)), trend: kpis.tenantsTrend, subtitle: 'Platform tenant records', tone: 'purple' },
+    { icon: UserSearch, label: 'Property Seekers', value: numberFormat.format(safeNumber(kpis.totalPropertySeekers)), trend: kpis.propertySeekersTrend, subtitle: 'Search users (not tenants)', tone: 'cyan' },
+    { icon: Home, label: 'Total Properties', value: numberFormat.format(safeNumber(kpis.totalProperties)), trend: kpis.propertiesTrend, subtitle: 'Landlord-managed properties', tone: 'green' },
+    { icon: Home, label: 'Total Units', value: numberFormat.format(safeNumber(kpis.totalUnits)), trend: kpis.unitsTrend, subtitle: 'All units across landlords', tone: 'teal' },
+    { icon: Home, label: 'Vacant Units', value: numberFormat.format(safeNumber(kpis.vacantUnits)), trend: 0, subtitle: 'Available inventory', tone: 'amber' },
+    { icon: FileText, label: 'Published Listings', value: numberFormat.format(safeNumber(kpis.publishedListings)), trend: 0, subtitle: 'Marketplace listings', tone: 'pink' },
+    { icon: BarChart3, label: 'Listing Views', value: numberFormat.format(safeNumber(kpis.listingViews)), trend: 0, subtitle: 'Seeker listing views', tone: 'cyan' },
+    { icon: BarChart3, label: 'Visit Bookings', value: numberFormat.format(safeNumber(kpis.visitBookings)), trend: 0, subtitle: 'Booked property visits', tone: 'teal' },
+    { icon: CreditCard, label: 'Active Subscriptions', value: numberFormat.format(safeNumber(kpis.activeSubscriptions)), trend: kpis.activeSubscriptionsTrend, subtitle: 'Landlord subscriptions', tone: 'blue' },
+    { icon: CreditCard, label: 'Monthly Revenue', value: formatUGX(safeNumber(kpis.monthlyRevenue)), trend: kpis.monthlyRevenueTrend, subtitle: 'Current monthly collections', tone: 'green' },
+    { icon: AlertTriangle, label: 'Pending Payments', value: numberFormat.format(safeNumber(kpis.pendingPayments)), trend: 0, subtitle: 'Awaiting payment', tone: 'amber' },
+    { icon: AlertTriangle, label: 'System Alerts', value: numberFormat.format(safeNumber(kpis.systemAlerts)), trend: 0, subtitle: 'Warnings requiring attention', tone: 'red' }
+  ];
 
-  const totalSubscriptions = statusData.reduce((sum, item) => sum + item.value, 0);
-  const revenueSeries = charts.revenue || [];
-  const planData = plans.map((plan) => ({ name: plan.name, value: plan.subscriptions, percentage: plan.percentage }));
-  const totalPlanSubscriptions = planData.reduce((sum, item) => sum + item.value, 0);
+  const filteredTransactions = transactions.filter((item) => (
+    transactionFilter === 'all' ? true : String(item.userType || '').toLowerCase() === transactionFilter
+  ));
+
+  const filteredActivities = activities.filter((item) => {
+    if (activityFilter === 'all') return true;
+    const source = `${item.title || ''} ${item.type || ''}`.toLowerCase();
+    if (activityFilter === 'landlord') return source.includes('subscription') || source.includes('landlord');
+    if (activityFilter === 'tenant') return source.includes('tenant');
+    if (activityFilter === 'seeker') return source.includes('seeker') || source.includes('listing') || source.includes('visit');
+    return true;
+  });
+
+  const healthTone = (statusValue) => {
+    const status = String(statusValue || 'unknown').toLowerCase();
+    if (status === 'operational' || status === 'healthy') return 'bg-emerald-50 text-emerald-700';
+    if (status === 'warning') return 'bg-amber-50 text-amber-700';
+    if (status === 'down') return 'bg-rose-50 text-rose-700';
+    return 'bg-slate-100 text-slate-600';
+  };
+
+  const landlordOccupancyPercent = safeNumber(landlordUnitBreakdown.totalUnits) > 0
+    ? (safeNumber(landlordUnitBreakdown.occupiedUnits) / safeNumber(landlordUnitBreakdown.totalUnits)) * 100
+    : 0;
 
   if (loading) {
     return (
@@ -200,215 +202,225 @@ const SuperAdminDashboard = () => {
 
   if (error) {
     return (
-      <Card className="p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-950">Dashboard could not load</h2>
-            <p className="mt-1 text-sm text-slate-500">{error}</p>
-          </div>
-          <button onClick={fetchDashboard} className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white">
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </button>
-        </div>
-      </Card>
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        {error}
+      </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total Customers" value={compact.format(kpis.totalCustomers || 0)} icon={Users} trend={kpis.customersTrend} />
-        <MetricCard label="Total Properties" value={compact.format(kpis.totalProperties || 0)} icon={Building2} trend={kpis.propertiesTrend} tone="purple" />
-        <MetricCard label="Total Units" value={compact.format(kpis.totalUnits || 0)} icon={ShieldCheck} trend={kpis.unitsTrend} />
-        <MetricCard label="Total Tenants" value={compact.format(kpis.totalTenants || 0)} icon={UserPlus} trend={kpis.tenantsTrend} tone="teal" />
-        <MetricCard label="Active Subscriptions" value={compact.format(kpis.activeSubscriptions || 0)} icon={CheckCircle2} trend={kpis.activeSubscriptionsTrend} tone="green" />
-        <MetricCard label="Expired Subscriptions" value={compact.format(kpis.expiredSubscriptions || 0)} icon={XCircle} trend={kpis.expiredSubscriptionsTrend} tone="red" danger />
-        <MetricCard label="Monthly Revenue" value={formatUGX(kpis.monthlyRevenue || 0)} icon={CreditCard} trend={kpis.monthlyRevenueTrend} />
-        <MetricCard label="Annual Revenue" value={formatUGX(kpis.annualRevenue || 0)} icon={LineChart} trend={kpis.annualRevenueTrend} />
+    <div className="mx-auto max-w-[1600px] space-y-5 sa-fade-in">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setRefreshNonce((prev) => prev + 1)}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh dashboard
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_1.1fr_0.72fr]">
-        <Card className="p-5">
-          <PanelHeader title="Subscriptions by Status" actionLabel="This Month" />
-          <div className="grid gap-5 sm:grid-cols-[0.9fr_1fr]">
-            {statusData.length ? (
-              <DonutChart data={statusData} centerLabel={totalSubscriptions} colors={statusData.map((item) => item.color)} />
-            ) : (
-              <EmptyPanel label="No subscription status data" />
-            )}
-            <div className="flex flex-col justify-center gap-3">
-              {statusData.map((item) => (
-                <div key={item.name} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-sm">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="font-semibold capitalize text-slate-600">{item.name.replace(/([A-Z])/g, ' $1')}</span>
-                  <span className="font-bold text-slate-800">
-                    {compact.format(item.value)} <span className="font-semibold text-slate-400">({totalSubscriptions ? ((item.value / totalSubscriptions) * 100).toFixed(1) : 0}%)</span>
-                  </span>
-                </div>
-              ))}
-              <div className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-                {formatTrend(kpis.activeSubscriptionsTrend)} more active subscriptions than last month
-              </div>
-            </div>
-          </div>
-          <a href="/super-admin/subscriptions" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-            View all subscriptions <ArrowRight className="h-4 w-4" />
-          </a>
-        </Card>
-
-        <Card className="p-5">
-          <PanelHeader title="Revenue Overview" actionLabel="This Year">
-            <p className="mt-4 text-xs font-semibold text-slate-500">Total Revenue</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="text-2xl font-black text-slate-950">{formatUGX(kpis.annualRevenue || 0)}</span>
-              <TrendPill value={kpis.annualRevenueTrend} />
-            </div>
-          </PanelHeader>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <AreaChart data={revenueSeries} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `UGX ${value / 1000}K`} width={58} />
-                <Tooltip formatter={(value) => formatUGX(value)} contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0' }} />
-                <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={3} fill="url(#revenueFill)" dot={{ r: 3, fill: '#fff', stroke: '#2563eb', strokeWidth: 2 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <a href="/super-admin/reports" className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-            View full report <ArrowRight className="h-4 w-4" />
-          </a>
-        </Card>
-
-        <Card className="p-5">
-          <PanelHeader title="System Health" />
-          <div className="divide-y divide-slate-100">
-            {systems.map((system) => {
-              const healthy = system.status === 'healthy' || system.status === 'operational';
-              return (
-                <div key={system.name} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className={`h-5 w-5 ${healthy ? 'text-emerald-500' : 'text-amber-500'}`} />
-                    <span className="text-sm font-bold text-slate-700">{system.name}</span>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${healthy ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                    {healthy ? 'Operational' : 'Warning'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <a href="/super-admin/system-monitor" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-            View system monitor <ArrowRight className="h-4 w-4" />
-          </a>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+        {summaryCards.map((card) => (
+          <SummaryCard key={card.label} {...card} />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_0.68fr_1fr]">
-        <Card className="p-5">
-          <PanelHeader title="Subscription Plan Summary" />
-          <div className="grid gap-5 sm:grid-cols-[0.8fr_1.2fr]">
-            {planData.length ? (
-              <DonutChart data={planData} centerLabel={totalPlanSubscriptions} colors={planColors} />
-            ) : (
-              <EmptyPanel label="No plan data" />
-            )}
-            <div className="space-y-3">
-              {planData.map((plan, index) => (
-                <div key={plan.name} className="grid grid-cols-[1fr_auto] gap-3 text-sm">
-                  <div className="min-w-0">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: planColors[index % planColors.length] }} />
-                      <span className="truncate font-bold text-slate-700">{plan.name}</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full" style={{ width: `${plan.percentage}%`, backgroundColor: planColors[index % planColors.length] }} />
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-slate-900">{compact.format(plan.value)}</div>
-                    <div className="text-xs font-semibold text-slate-400">{plan.percentage}%</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <SectionCard title="Platform Overview" subtitle="Landlords, tenants, seekers, properties, and units growth">
+          <div className="space-y-3">
+            <HorizontalMetric label="Landlords Growth" value={`${safeNumber(platformOverview.landlordsGrowth).toFixed(1)}%`} percent={Math.min(Math.abs(safeNumber(platformOverview.landlordsGrowth)), 100)} colorClass="bg-blue-500" />
+            <HorizontalMetric label="Tenants Growth" value={`${safeNumber(platformOverview.tenantsGrowth).toFixed(1)}%`} percent={Math.min(Math.abs(safeNumber(platformOverview.tenantsGrowth)), 100)} colorClass="bg-violet-500" />
+            <HorizontalMetric label="Property Seekers Growth" value={`${safeNumber(platformOverview.propertySeekersGrowth).toFixed(1)}%`} percent={Math.min(Math.abs(safeNumber(platformOverview.propertySeekersGrowth)), 100)} colorClass="bg-cyan-500" />
+            <HorizontalMetric label="Properties Growth" value={`${safeNumber(platformOverview.propertiesGrowth).toFixed(1)}%`} percent={Math.min(Math.abs(safeNumber(platformOverview.propertiesGrowth)), 100)} colorClass="bg-emerald-500" />
+            <HorizontalMetric label="Units Growth" value={`${safeNumber(platformOverview.unitsGrowth).toFixed(1)}%`} percent={Math.min(Math.abs(safeNumber(platformOverview.unitsGrowth)), 100)} colorClass="bg-amber-500" />
           </div>
-          <a href="/super-admin/subscriptions" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-            Manage plans <ArrowRight className="h-4 w-4" />
-          </a>
-        </Card>
+        </SectionCard>
 
-        <Card className="p-5">
-          <PanelHeader title="Recent Activity" />
+        <SectionCard title="Marketplace Activity" subtitle="Listings, views, unlocks, reveals, and visits">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Published Listings</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.publishedListings))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Unpublished Listings</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.unpublishedListings))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Listing Views</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.listingViews))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Detail Unlocks</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.detailUnlocks))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Map Reveals</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.mapReveals))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Visit Bookings</p><p className="mt-1 text-lg font-bold text-slate-900">{numberFormat.format(safeNumber(marketplaceActivity.visitBookings))}</p></div>
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <SectionCard title="Revenue & Billing" subtitle="Subscriptions, seeker spend, pending and failed payments" viewAllLink="/super-admin/billing">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Landlord Subscription Revenue</p><p className="mt-1 text-base font-bold text-slate-900">{formatUGX(safeNumber(revenueBilling.landlordSubscriptionRevenue))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Seeker View/Unlock Revenue</p><p className="mt-1 text-base font-bold text-slate-900">{formatUGX(safeNumber(revenueBilling.propertySeekerViewUnlockRevenue))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Seeker Visit Revenue</p><p className="mt-1 text-base font-bold text-slate-900">{formatUGX(safeNumber(revenueBilling.propertySeekerVisitBookingRevenue))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Total Platform Revenue</p><p className="mt-1 text-base font-bold text-slate-900">{formatUGX(safeNumber(revenueBilling.totalPlatformRevenue))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Pending Payments</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(revenueBilling.pendingPayments))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Failed Payments</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(revenueBilling.failedPayments))}</p></div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Property Seeker Activity" subtitle="Seeker totals, spending, views, and visits" viewAllLink="/super-admin/property-seekers">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Total Seekers</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(propertySeekerActivity.totalSeekers))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Active This Month</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(propertySeekerActivity.activeSeekersThisMonth))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Total Paid Views</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(propertySeekerActivity.totalPaidViews))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Total Booked Visits</p><p className="mt-1 text-base font-bold text-slate-900">{numberFormat.format(safeNumber(propertySeekerActivity.totalBookedVisits))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Total Spent by Seekers</p><p className="mt-1 text-base font-bold text-slate-900">{formatUGX(safeNumber(propertySeekerActivity.totalAmountSpentBySeekers))}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-slate-500">Average Views per Seeker</p><p className="mt-1 text-base font-bold text-slate-900">{safeNumber(propertySeekerActivity.averageViewsPerSeeker).toFixed(2)}</p></div>
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <SectionCard title="Landlord Unit Performance" subtitle="Occupied and vacant unit distribution by landlord">
           <div className="space-y-4">
-            {activities.length ? activities.map((item) => (
-              <div key={item.id} className="flex gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                  <Activity className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-1 text-sm font-bold text-slate-800">{item.title}</p>
-                    <span className="shrink-0 text-xs font-semibold text-slate-400">{timeAgo(item.createdAt)}</span>
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-slate-500">{item.subtitle}</p>
-                </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-slate-600">Occupied vs Vacant</p>
+                <p className="text-xs text-slate-500">{safeNumber(landlordOccupancyPercent).toFixed(1)}% occupancy</p>
               </div>
-            )) : <EmptyPanel label="No recent activity" />}
-          </div>
-          <a href="/super-admin/activity-logs" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-            View all activities <ArrowRight className="h-4 w-4" />
-          </a>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <div className="p-5 pb-3">
-            <PanelHeader title="Latest Transactions" />
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left text-sm">
-              <thead>
-                <tr className="border-y border-slate-100 text-xs font-bold text-slate-500">
-                  <th className="px-5 py-3">Invoice ID</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Amount</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="text-slate-700">
-                    <td className="px-5 py-3 font-bold text-slate-800">{transaction.invoiceId}</td>
-                    <td className="px-5 py-3 font-semibold">{transaction.customer}</td>
-                    <td className="px-5 py-3 font-bold">{formatUGX(transaction.amount || 0)}</td>
-                    <td className="px-5 py-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        transaction.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                      }`}>
-                        {transaction.status === 'completed' ? 'Paid' : transaction.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 font-semibold text-slate-500">{formatDate(transaction.date)}</td>
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-3 rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(landlordOccupancyPercent, 100))}%` }} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600">
+                <p>Occupied: <span className="font-bold text-slate-900">{numberFormat.format(safeNumber(landlordUnitBreakdown.occupiedUnits))}</span></p>
+                <p>Vacant: <span className="font-bold text-slate-900">{numberFormat.format(safeNumber(landlordUnitBreakdown.vacantUnits))}</span></p>
+                <p>Total: <span className="font-bold text-slate-900">{numberFormat.format(safeNumber(landlordUnitBreakdown.totalUnits))}</span></p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-[700px] w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th className="py-2 px-3">Landlord</th>
+                    <th className="py-2 px-3">Properties</th>
+                    <th className="py-2 px-3">Total Units</th>
+                    <th className="py-2 px-3">Occupied</th>
+                    <th className="py-2 px-3">Vacant</th>
+                    <th className="py-2 px-3">Tenants</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {!transactions.length && <div className="px-5 pb-5"><EmptyPanel label="No transactions yet" /></div>}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {landlordsSummary.length === 0 ? (
+                    <tr><td colSpan={6} className="py-3 px-3 text-slate-500">No records found</td></tr>
+                  ) : landlordsSummary.map((row) => (
+                    <tr key={row.id} className="hover:bg-slate-50">
+                      <td className="py-2 px-3">{row.landlordName || 'N/A'}</td>
+                      <td className="py-2 px-3">{numberFormat.format(safeNumber(row.properties))}</td>
+                      <td className="py-2 px-3">{numberFormat.format(safeNumber(row.totalUnits))}</td>
+                      <td className="py-2 px-3">{numberFormat.format(safeNumber(row.occupiedUnits))}</td>
+                      <td className="py-2 px-3">{numberFormat.format(safeNumber(row.vacantUnits))}</td>
+                      <td className="py-2 px-3">{numberFormat.format(safeNumber(row.tenants))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="px-5 pb-5 pt-2">
-            <a href="/super-admin/subscriptions" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-              View all transactions <ArrowRight className="h-4 w-4" />
-            </a>
+        </SectionCard>
+
+        <SectionCard title="System Health" subtitle="Service uptime and incident watch" viewAllLink="/super-admin/system-monitor">
+          <div className="space-y-2">
+            {systems.length === 0 ? (
+              <p className="text-sm text-slate-500">No records found</p>
+            ) : systems.map((system) => (
+              <div key={system.name} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-700">{system.name}</span>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${healthTone(system.status)}`}>
+                  {String(system.status || 'unknown')}
+                </span>
+              </div>
+            ))}
           </div>
-        </Card>
+        </SectionCard>
       </div>
+
+      <SectionCard title="Latest Transactions" subtitle="Recent subscription and payment events" viewAllLink="/super-admin/billing">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {['all', 'landlord', 'tenant', 'property seeker'].map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setTransactionFilter(type)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${transactionFilter === type ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {type === 'all' ? 'All' : type}
+            </button>
+          ))}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-[960px] w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="py-2 px-3">Transaction ID</th>
+                <th className="py-2 px-3">User</th>
+                <th className="py-2 px-3">User Type</th>
+                <th className="py-2 px-3">Payment For</th>
+                <th className="py-2 px-3">Amount</th>
+                <th className="py-2 px-3">Payment Method</th>
+                <th className="py-2 px-3">Status</th>
+                <th className="py-2 px-3">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredTransactions.length === 0 ? (
+                <tr><td colSpan={8} className="py-3 px-3 text-slate-500">No records found</td></tr>
+              ) : filteredTransactions.map((item) => (
+                <tr key={item.id || item.transactionId} className="hover:bg-slate-50">
+                  <td className="py-2 px-3 font-semibold text-slate-800">{item.transactionId || 'N/A'}</td>
+                  <td className="py-2 px-3">{item.user || 'N/A'}</td>
+                  <td className="py-2 px-3">{item.userType || 'N/A'}</td>
+                  <td className="py-2 px-3">{item.paymentFor || 'N/A'}</td>
+                  <td className="py-2 px-3">{formatUGX(safeNumber(item.amount))}</td>
+                  <td className="py-2 px-3">{item.paymentMethod || 'N/A'}</td>
+                  <td className="py-2 px-3">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${healthTone(item.status)}`}>{String(item.status || 'N/A')}</span>
+                  </td>
+                  <td className="py-2 px-3">{safeDate(item.date)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Recent Activity" subtitle="Platform actions and events timeline" viewAllLink="/super-admin/activity-logs">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {['all', 'landlord', 'tenant', 'seeker'].map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setActivityFilter(type)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${activityFilter === type ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {type === 'all' ? 'All' : type}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {filteredActivities.length === 0 ? (
+            <p className="text-sm text-slate-500">No records found</p>
+          ) : filteredActivities.map((activity, index) => (
+            <div key={activity.id || `${activity.type}-${index}`} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                index % 4 === 0 ? 'bg-blue-100 text-blue-700' : index % 4 === 1 ? 'bg-emerald-100 text-emerald-700' : index % 4 === 2 ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
+              }`}>
+                {String(activity.type || 'A').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800">{activity.title || 'Platform activity'}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{activity.subtitle || 'N/A'} - {activity.createdAt ? new Date(activity.createdAt).toLocaleString() : 'N/A'}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
     </div>
   );
 };

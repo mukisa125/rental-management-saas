@@ -3,8 +3,8 @@ import { formatUGX } from '../utils/currency';
 
 const SubscriptionSummaryCard = ({ plans = [] }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-      <h3 className="text-sm font-semibold text-slate-900 mb-3">Subscription Plans</h3>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-black text-slate-900">Subscription Plans</h3>
       <div className="space-y-3">
         {plans.map((p) => (
           <div key={p.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0">

@@ -1,8 +1,19 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Wallet,
+  Wrench,
+  BarChart3,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDashboardPath } from '../utils/authRoutes';
+import BrandLogo from '../components/BrandLogo';
+import { PLATFORM_NAME } from '../constants/brand';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -34,93 +45,128 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary-700 items-center justify-center p-12">
-        <div className="text-white max-w-lg">
-          <div className="flex items-center mb-8">
-            <Building2 className="w-12 h-12 mr-4" />
-            <h1 className="text-3xl font-bold">Rental Management SaaS</h1>
-          </div>
-          <p className="text-xl mb-8 opacity-90">
-            Manage your properties, tenants, payments and maintenance from one powerful platform
-          </p>
-          <div className="bg-white/10 rounded-lg p-6 backdrop-blur-sm">
-            <img 
-              src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=400&fit=crop"
-              alt="Modern Apartments"
-              className="rounded-lg w-full h-64 object-cover"
-            />
-          </div>
-        </div>
-      </div>
+    <div className="auth-shell relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="auth-bg-shape auth-bg-shape-1" aria-hidden="true" />
+      <div className="auth-bg-shape auth-bg-shape-2" aria-hidden="true" />
 
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-            <p className="text-gray-600 mb-8">Sign in to your account to continue</p>
+      <div className="auth-fade-in mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-2 lg:gap-8 lg:px-8 lg:py-10">
+        {/* Left Side - Marketing */}
+        <aside className="relative hidden overflow-hidden rounded-2xl bg-blue-700 p-8 text-white shadow-xl shadow-blue-900/10 lg:flex lg:flex-col lg:justify-between">
+
+          <div className="relative z-10">
+            <div className="mb-6 flex items-center gap-3">
+              <BrandLogo size="lg" tone="onDark" />
+              <div>
+                <h1 className="text-2xl font-semibold leading-tight">{PLATFORM_NAME}</h1>
+                <p className="mt-1 text-sm font-semibold text-blue-100">Professional rental management</p>
+              </div>
+            </div>
+
+            <h2 className="max-w-md text-3xl font-semibold leading-tight text-white">
+              Run your properties with confidence and clarity.
+            </h2>
+            <p className="mt-4 max-w-md text-base text-blue-50/90">
+              Built for super admins, self owners, and tenants to collaborate from one rental platform.
+            </p>
+          </div>
+
+          <div className="relative z-10 grid gap-3 sm:grid-cols-2">
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <ShieldCheck className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Secure Access</p>
+              <p className="mt-1 text-xs text-blue-50/90">Purpose-built access for super admin, self owner, and tenant users.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <Wallet className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Rent Tracking</p>
+              <p className="mt-1 text-xs text-blue-50/90">Monitor payments, balances, and history at a glance.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <Wrench className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Maintenance</p>
+              <p className="mt-1 text-xs text-blue-50/90">Track requests and keep properties in top condition.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <BarChart3 className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Insights</p>
+              <p className="mt-1 text-xs text-blue-50/90">Use live analytics to make smarter rental decisions.</p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Side - Login Form */}
+        <div className="flex items-center justify-center">
+          <div className="auth-card-slide w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+            <div className="mb-6 lg:hidden">
+              <div className="mb-4 flex items-center gap-3">
+                <BrandLogo />
+                <p className="text-base font-semibold text-slate-900">{PLATFORM_NAME}</p>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">Welcome back</h2>
+            <p className="mt-2 text-sm text-slate-600">Sign in to continue managing your rental operations.</p>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
                     placeholder="you@example.com"
                     required
                   />
                 </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-12 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                    placeholder="Enter your password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mb-6">
-                <label className="flex items-center">
+              <div className="flex items-center justify-between gap-4">
+                <label className="flex cursor-pointer items-center">
                   <input
                     type="checkbox"
                     checked={formData.remember}
                     onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  <span className="ml-2 text-sm text-slate-600">Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
+                <Link to="/forgot-password" className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-700">
                   Forgot password?
                 </Link>
               </div>
@@ -128,16 +174,16 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-primary-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-lg hover:shadow-primary-700/20 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
 
-            <p className="text-center text-gray-600 mt-6">
+            <p className="mt-6 text-center text-sm text-slate-600">
               Don't have an account?{' '}
-              <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-                Sign up
+              <Link to="/register" className="font-semibold text-primary-600 transition-colors hover:text-primary-700">
+                Create account
               </Link>
             </p>
           </div>

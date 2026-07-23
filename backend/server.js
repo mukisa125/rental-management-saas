@@ -1,7 +1,26 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env.local'), override: true });
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+
+// TODO: To enable a daily overdue-payment sweep, install node-cron:
+//   npm install node-cron
+// Then uncomment the block below.
+//
+// const cron = require('node-cron');
+// const { refreshOverduePayments } = require('./services/paymentTrackingService');
+// // Run every day at midnight (server local time)
+// cron.schedule('0 0 * * *', async () => {
+//   console.log('[Cron] Daily overdue payment refresh started…');
+//   try {
+//     await refreshOverduePayments({}); // {} = all payments across all owners
+//     console.log('[Cron] Daily overdue payment refresh completed.');
+//   } catch (err) {
+//     console.error('[Cron] Failed to refresh overdue payments:', err.message);
+//   }
+// });
 
 const app = express();
 
@@ -10,8 +29,10 @@ connectDB();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Property images are compressed client-side and stored as bounded base64 payloads.
+// Two megabytes supports up to three compressed images while preventing oversized requests.
+app.use(express.json({ limit: '4mb' }));
+app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -32,8 +53,11 @@ app.use('/api/owner', require('./routes/ownerRoutes'));
 app.use('/api/self-owner', require('./routes/selfOwnerRoutes'));
 app.use('/api/super-admin', require('./routes/superAdminRoutes'));
 app.use('/api/tenant-portal', require('./routes/tenantPortalRoutes'));
+app.use('/api/tenant-applications', require('./routes/tenantApplicationRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/documents', require('./routes/documentRoutes'));
+app.use('/api/public', require('./routes/publicRoutes'));
+app.use('/api/property-seeker', require('./routes/propertySeekerRoutes'));
 
 // Root route
 app.get('/', (req, res) => {
@@ -43,22 +67,24 @@ app.get('/', (req, res) => {
 // Debug: list registered routes (helpful during development)
 try {
   const routes = [];
-  app._router.stack.forEach((mw) => {
-    if (!mw) return;
-    if (mw.route && mw.route.path) {
-      const methods = Object.keys(mw.route.methods || {}).join(',').toUpperCase();
-      routes.push(`${methods} ${mw.route.path}`);
-      return;
-    }
-    if (mw.name === 'router' && mw.handle && Array.isArray(mw.handle.stack)) {
-      mw.handle.stack.forEach((r) => {
-        if (r && r.route && r.route.path) {
-          const methods = Object.keys(r.route.methods || {}).join(',').toUpperCase();
-          routes.push(`${methods} ${r.route.path}`);
-        }
-      });
-    }
-  });
+  if (app._router && app._router.stack && Array.isArray(app._router.stack)) {
+    app._router.stack.forEach((mw) => {
+      if (!mw) return;
+      if (mw.route && mw.route.path) {
+        const methods = Object.keys(mw.route.methods || {}).join(',').toUpperCase();
+        routes.push(`${methods} ${mw.route.path}`);
+        return;
+      }
+      if (mw.name === 'router' && mw.handle && Array.isArray(mw.handle.stack)) {
+        mw.handle.stack.forEach((r) => {
+          if (r && r.route && r.route.path) {
+            const methods = Object.keys(r.route.methods || {}).join(',').toUpperCase();
+            routes.push(`${methods} ${r.route.path}`);
+          }
+        });
+      }
+    });
+  }
   console.log('\nRegistered routes:');
   routes.sort().forEach(r => console.log(r));
 } catch (e) {

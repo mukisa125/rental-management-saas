@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 const SelfOwnerProfile = () => {
-  const { user, token } = useAuth();
+  const { updateProfile } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,8 +12,17 @@ const SelfOwnerProfile = () => {
     name: '',
     email: '',
     phone: '',
+    avatar: '',
     password: ''
   });
+
+  const resolveAvatar = (avatarValue) => {
+    if (!avatarValue) return '';
+    if (avatarValue.startsWith('data:') || avatarValue.startsWith('http://') || avatarValue.startsWith('https://')) {
+      return avatarValue;
+    }
+    return `data:image/webp;base64,${avatarValue}`;
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -27,7 +36,9 @@ const SelfOwnerProfile = () => {
       setFormData({
         name: response.data.name,
         email: response.data.email,
-        phone: response.data.phone || ''
+        phone: response.data.phone || '',
+        avatar: response.data.avatar || '',
+        password: ''
       });
     } catch (err) {
       setError(err.message);
@@ -42,13 +53,31 @@ const SelfOwnerProfile = () => {
       const updateData = { ...formData };
       if (!updateData.password) delete updateData.password;
 
-      await api.put('/auth/profile', updateData);
+      const result = await updateProfile(updateData);
+      if (!result.success) {
+        throw new Error(result.error || 'Unable to update profile');
+      }
       setIsEditing(false);
       fetchProfile();
       alert('Profile updated successfully');
     } catch (err) {
       alert('Error updating profile');
     }
+  };
+
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setFormData((current) => ({ ...current, avatar: String(reader.result || '') }));
+    reader.onerror = () => alert('Unable to read selected image');
+    reader.readAsDataURL(file);
   };
 
   if (loading) return <div className="p-4">Loading...</div>;
@@ -62,9 +91,13 @@ const SelfOwnerProfile = () => {
         {/* Profile Card */}
         <div className="lg:col-span-1">
           <div className="bg-white p-6 rounded-lg shadow">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 mx-auto">
-              {profile?.name?.charAt(0).toUpperCase()}
-            </div>
+            {resolveAvatar(profile?.avatar) ? (
+              <img src={resolveAvatar(profile?.avatar)} alt={profile?.name || 'Self owner'} className="w-20 h-20 rounded-full border border-slate-200 object-cover mb-4 mx-auto" />
+            ) : (
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-3xl font-bold text-white shadow-sm">
+                {profile?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-center mb-2">{profile?.name}</h2>
             <p className="text-gray-600 text-center text-sm mb-4">{profile?.email}</p>
             <div className="space-y-2 text-sm">
@@ -131,6 +164,24 @@ const SelfOwnerProfile = () => {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-4 py-2 border rounded"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">Profile Image</label>
+                  <input
+                    type="text"
+                    value={formData.avatar}
+                    onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
+                    className="w-full px-4 py-2 border rounded"
+                    placeholder="Paste image URL or data URL"
+                  />
+                  <label className="mt-2 inline-flex cursor-pointer items-center rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Upload image
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                  </label>
+                  {resolveAvatar(formData.avatar) && (
+                    <img src={resolveAvatar(formData.avatar)} alt="Profile preview" className="mt-3 h-16 w-16 rounded-full border border-slate-200 object-cover" />
+                  )}
                 </div>
 
                 <div>

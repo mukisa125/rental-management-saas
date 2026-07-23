@@ -1,151 +1,340 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { useEffect, useState, useCallback } from 'react';
+import MaintenanceSummaryCards from '../../components/maintenance/MaintenanceSummaryCards';
+import MaintenanceFilters from '../../components/maintenance/MaintenanceFilters';
+import MaintenanceTable from '../../components/maintenance/MaintenanceTable';
+import ViewMaintenanceModal from '../../components/maintenance/ViewMaintenanceModal';
+import AddMaintenanceModal from '../../components/maintenance/AddMaintenanceModal';
+import ServiceProvidersModal from '../../components/maintenance/ServiceProvidersModal';
+import { selfOwnerAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { formatUGX } from '../../utils/currency';
 
-const SelfOwnerMaintenance = () => {
-  const { token } = useAuth();
-  const [maintenance, setMaintenance] = useState([]);
+const SERVICE_PROVIDER_STORAGE_KEY = 'selfOwnerServiceProviders';
+
+export default function SelfOwnerMaintenance() {
+  const { user } = useAuth();
+  // State
+  const [requests, setRequests] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [summary, setSummary] = useState({});
+
+  const [filters, setFilters] = useState({
+    search: '',
+    property: '',
+    unit: '',
+    status: '',
+    priority: '',
+    source: ''
+  });
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showProvidersModal, setShowProvidersModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [serviceProviders, setServiceProviders] = useState([]);
 
   useEffect(() => {
-    fetchMaintenance();
-  }, [page, filterStatus]);
-
-  const fetchMaintenance = async () => {
     try {
-      setLoading(true);
-      const params = { page, limit: 50 };
-      if (filterStatus) params.status = filterStatus;
-      const response = await api.get('/self-owner/maintenance', { params });
-      setMaintenance(response.data.maintenance || []);
-      setTotalPages(response.data.pagination?.pages || 1);
+      const raw = localStorage.getItem(SERVICE_PROVIDER_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        setServiceProviders(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to load service providers:', error);
+    }
+  }, []);
+
+  const handleSaveProviders = (providers) => {
+    setServiceProviders(providers);
+    localStorage.setItem(SERVICE_PROVIDER_STORAGE_KEY, JSON.stringify(providers));
+  };
+
+  // Fetch maintenance requests
+  const fetchMaintenance = useCallback(async () => {
+    try {
+      setPageLoading(true);
+      const params = {
+        page: currentPage,
+        limit: 10,
+        search: filters.search,
+        property: filters.property,
+        unit: filters.unit,
+        status: filters.status,
+        priority: filters.priority,
+        source: filters.source
+      };
+
+      // Remove empty params
+      Object.keys(params).forEach(
+        (key) => params[key] === '' && delete params[key]
+      );
+
+      const response = await selfOwnerAPI.getMaintenance(params);
+      setRequests(response.data?.requests || []);
+      setTotalPages(response.data?.pagination?.pages || response.data?.pagination?.totalPages || 1);
+      setSummary(response.data?.summary || {});
+      setError(null);
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching maintenance:', err);
+      setError(err.response?.data?.message || 'Failed to fetch maintenance requests');
     } finally {
-      setLoading(false);
+      setPageLoading(false);
+    }
+  }, [currentPage, filters]);
+
+  // Fetch properties and units
+  const fetchPropertiesAndUnits = useCallback(async () => {
+    try {
+      const [propsRes, unitsRes] = await Promise.all([
+        selfOwnerAPI.getProperties(),
+        selfOwnerAPI.getUnits()
+      ]);
+      setProperties(propsRes.data?.properties || []);
+      setUnits(unitsRes.data?.units || []);
+    } catch (err) {
+      console.error('Error fetching properties/units:', err);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true);
+        await fetchPropertiesAndUnits();
+        await fetchMaintenance();
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  // Refetch on filter changes
+  useEffect(() => {
+    if (!loading) {
+      setCurrentPage(1);
+      fetchMaintenance();
+    }
+  }, [filters]);
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  // Handle page changes
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle add request
+  const handleAddRequest = async (formData) => {
+    try {
+      setPageLoading(true);
+      await selfOwnerAPI.createMaintenance(formData);
+      setShowAddModal(false);
+      setCurrentPage(1);
+      await fetchMaintenance();
+      window.dispatchEvent(new Event('maintenance-updated'));
+    } catch (err) {
+      console.error('Error creating maintenance request:', err);
+      alert(err.response?.data?.message || 'Failed to create maintenance request');
+    } finally {
+      setPageLoading(false);
     }
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
-
-  const getStatusColor = (status) => {
-    if (status === 'completed') return 'bg-green-100 text-green-800';
-    if (status === 'in_progress') return 'bg-blue-100 text-blue-800';
-    if (status === 'pending') return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
+  // Handle view request
+  const handleViewRequest = async (request) => {
+    try {
+      const response = await selfOwnerAPI.getMaintenanceById(request._id);
+      setSelectedRequest(response.data?.request || request);
+    } catch {
+      setSelectedRequest(request);
+    }
+    setShowViewModal(true);
   };
 
-  const getPriorityColor = (priority) => {
-    if (priority === 'urgent') return 'text-red-600';
-    if (priority === 'high') return 'text-orange-600';
-    if (priority === 'medium') return 'text-yellow-600';
-    return 'text-gray-600';
+  // Handle status change
+  const handleStatusChange = async (requestId, newStatus) => {
+    try {
+      await selfOwnerAPI.updateMaintenanceStatus(requestId, newStatus);
+      await fetchMaintenance();
+      window.dispatchEvent(new Event('maintenance-updated'));
+      if (selectedRequest?._id === requestId) {
+        const refreshed = await selfOwnerAPI.getMaintenanceById(requestId);
+        setSelectedRequest(refreshed.data?.request || null);
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert(err.response?.data?.message || 'Failed to update status');
+    }
   };
+
+  const handleAddComment = async (requestId, comment) => {
+    try {
+      const response = await selfOwnerAPI.addMaintenanceComment(requestId, { comment });
+      setSelectedRequest(response.data?.request || null);
+      await fetchMaintenance();
+      window.dispatchEvent(new Event('maintenance-updated'));
+    } catch (err) {
+      console.error('Error adding maintenance comment:', err);
+      alert(err.response?.data?.message || 'Failed to add comment');
+    }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    await handleStatusChange(requestId, 'approved');
+  };
+
+  const handleCompleteRequest = async (requestId) => {
+    await handleStatusChange(requestId, 'completed');
+  };
+
+  const handleAssignProvider = async (requestId, provider) => {
+    if (!provider) return;
+
+    try {
+      const response = await selfOwnerAPI.updateMaintenance(requestId, {
+        technicianName: provider.name,
+        technicianPhone: provider.tel,
+        technicianService: provider.service,
+        technicianAddress: provider.address,
+        status: 'assigned'
+      });
+
+      const updated = response.data?.request || null;
+      setSelectedRequest(updated);
+      await fetchMaintenance();
+      window.dispatchEvent(new Event('maintenance-updated'));
+    } catch (err) {
+      console.error('Error assigning service provider:', err);
+      alert(err.response?.data?.message || 'Failed to assign service provider');
+    }
+  };
+
+  // Handle delete request
+  const handleDeleteRequest = async (requestId) => {
+    if (window.confirm('Are you sure you want to delete this maintenance request?')) {
+      try {
+        await selfOwnerAPI.deleteMaintenance(requestId);
+        await fetchMaintenance();
+        window.dispatchEvent(new Event('maintenance-updated'));
+        if (selectedRequest?._id === requestId) {
+          setShowViewModal(false);
+          setSelectedRequest(null);
+        }
+      } catch (err) {
+        console.error('Error deleting maintenance:', err);
+        alert(err.response?.data?.message || 'Failed to delete maintenance request');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Maintenance Requests</h1>
+    <div className="min-h-screen bg-slate-50 p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">
+          Maintenance Requests
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage maintenance requests from tenants and self-reported issues
+        </p>
+      </div>
 
-      <div className="mb-4">
-        <select
-          value={filterStatus}
-          onChange={(e) => {
-            setFilterStatus(e.target.value);
-            setPage(1);
+      {/* Error Alert */}
+      {error && (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      )}
+
+      {/* Summary Cards */}
+      <MaintenanceSummaryCards summary={summary} />
+
+      {/* Filters */}
+      <MaintenanceFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        properties={properties}
+        units={units}
+        onAddRequest={() => setShowAddModal(true)}
+        onManageProviders={() => setShowProvidersModal(true)}
+      />
+
+      {/* Table */}
+      <MaintenanceTable
+        requests={requests}
+        loading={pageLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        onViewRequest={handleViewRequest}
+        onApproveRequest={handleApproveRequest}
+        onCompleteRequest={handleCompleteRequest}
+        onDeleteRequest={handleDeleteRequest}
+      />
+
+      {/* View Maintenance Modal */}
+      {showViewModal && selectedRequest && (
+        <ViewMaintenanceModal
+          request={selectedRequest}
+          landlord={{
+            name: user?.name || user?.fullName || user?.companyName || 'Landlord',
+            phone: user?.phone || user?.company?.phone || '',
+            email: user?.email || user?.company?.email || '',
+            company: user?.company?.companyName || user?.companyName || ''
           }}
-          className="px-4 py-2 border rounded"
-        >
-          <option value="">All Status</option>
-          <option value="submitted">Submitted</option>
-          <option value="assigned">Assigned</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-        </select>
-      </div>
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedRequest(null);
+          }}
+          onStatusChange={handleStatusChange}
+          onAddComment={handleAddComment}
+          onDelete={handleDeleteRequest}
+          providers={serviceProviders}
+          onAssignServiceProvider={handleAssignProvider}
+        />
+      )}
 
-      <div className="space-y-4">
-        {maintenance.map((request) => (
-          <div key={request._id} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-bold">{request.category}</h3>
-                <p className="text-gray-600 text-sm">{request.issue}</p>
-              </div>
-              <div className="text-right">
-                <span className={`px-3 py-1 rounded text-sm font-semibold ${getStatusColor(request.status)}`}>
-                  {request.status}
-                </span>
-                <p className={`text-sm font-semibold mt-2 ${getPriorityColor(request.priority)}`}>
-                  {request.priority.toUpperCase()}
-                </p>
-              </div>
-            </div>
+      {showProvidersModal && (
+        <ServiceProvidersModal
+          providers={serviceProviders}
+          onSave={handleSaveProviders}
+          onClose={() => setShowProvidersModal(false)}
+        />
+      )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded mb-4 text-sm">
-              <div>
-                <p className="text-gray-600">Property</p>
-                <p className="font-semibold">{request.property?.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Unit</p>
-                <p className="font-semibold">{request.unit?.unitNumber}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Estimated Cost</p>
-                <p className="font-semibold">{formatUGX(request.estimatedCost)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Actual Cost</p>
-                <p className="font-semibold text-green-600">{formatUGX(request.cost)}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm border-t pt-4">
-              <div>
-                <p className="text-gray-600">Submitted</p>
-                <p className="font-semibold">{new Date(request.submittedDate).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Expected Completion</p>
-                <p className="font-semibold">
-                  {request.expectedCompletionDate ? new Date(request.expectedCompletionDate).toLocaleDateString() : '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600">Assigned To</p>
-                <p className="font-semibold">{request.vendor?.name || '-'}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-6 flex justify-center gap-2">
-        <button
-          onClick={() => setPage(Math.max(1, page - 1))}
-          disabled={page === 1}
-          className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="px-4 py-2">Page {page} of {totalPages}</span>
-        <button
-          onClick={() => setPage(Math.min(totalPages, page + 1))}
-          disabled={page === totalPages}
-          className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+      {/* Add Maintenance Modal */}
+      {showAddModal && (
+        <AddMaintenanceModal
+          properties={properties}
+          units={units}
+          onClose={() => setShowAddModal(false)}
+          onSubmit={handleAddRequest}
+          loading={pageLoading}
+        />
+      )}
     </div>
   );
-};
-
-export default SelfOwnerMaintenance;
+}

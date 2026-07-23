@@ -140,12 +140,12 @@ const SuperAdminCustomers = () => {
   };
 
   const onExport = () => {
-    // simple export placeholder — keep backend unchanged
-    alert('Export started — backend handles export endpoint');
+    // Simple export placeholder; keep backend unchanged.
+    alert('Export started. Backend handles the export endpoint.');
   };
 
   const onAdd = () => {
-    // navigate to add customer flow or open modal — placeholder
+    // Navigate to add customer flow or open modal placeholder.
     setShowAddModal(true);
   };
 
@@ -154,8 +154,8 @@ const SuperAdminCustomers = () => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (selectedTab === 'owner' || selectedTab === 'self_owner') {
-        // Register company (owner/self_owner)
+      if (selectedTab === 'self_owner') {
+        // Register company (self_owner)
         const payload = {
           companyName: form.companyName || `${form.name} Company`,
           ownerName: form.name,
@@ -163,18 +163,18 @@ const SuperAdminCustomers = () => {
           password: form.password,
           phone: form.phone,
           address: form.address,
-          role: selectedTab === 'owner' ? 'owner' : 'self_owner'
+          role: 'self_owner'
         };
         await api.post('/auth/register-company', payload);
       } else {
-        // Register user (manager or tenant)
+        // Register user (super_admin or tenant)
         const payload = {
           name: form.name,
           email: form.email,
           password: form.password,
           phone: form.phone,
           company: form.companyId || undefined,
-          role: selectedTab === 'manager' ? 'manager' : 'tenant'
+          role: selectedTab === 'super_admin' ? 'super_admin' : 'tenant'
         };
         await api.post('/auth/register', payload);
       }
@@ -344,14 +344,14 @@ const SuperAdminCustomers = () => {
                 <input value={form.phone} onChange={(e) => setForm(s => ({ ...s, phone: e.target.value }))} placeholder="Phone" className="p-2 border rounded-md" />
               </div>
 
-              {(selectedTab === 'owner' || selectedTab === 'self_owner') && (
+              {(selectedTab === 'self_owner') && (
                 <>
                   <input required value={form.companyName} onChange={(e) => setForm(s => ({ ...s, companyName: e.target.value }))} placeholder="Company name" className="p-2 border rounded-md w-full" />
                   <input value={form.address} onChange={(e) => setForm(s => ({ ...s, address: e.target.value }))} placeholder="Address" className="p-2 border rounded-md w-full" />
                 </>
               )}
 
-              {(selectedTab === 'manager' || selectedTab === 'tenant') && (
+              {(selectedTab === 'tenant' || selectedTab === 'super_admin') && (
                 <select value={form.companyId} onChange={(e) => setForm(s => ({ ...s, companyId: e.target.value }))} className="p-2 border rounded-md w-full">
                   <option value="">Select company (optional)</option>
                   {companiesList.map(c => (
@@ -398,9 +398,8 @@ const SuperAdminCustomers = () => {
               {[
                 { key: 'all', label: 'All' },
                 { key: 'tenant', label: 'Tenants' },
-                { key: 'owner', label: 'Owners' },
                 { key: 'self_owner', label: 'Self Owners' },
-                { key: 'manager', label: 'Managers' }
+                { key: 'super_admin', label: 'Super Admins' }
               ].map(tab => (
                 <button
                   key={tab.key}
@@ -512,8 +511,7 @@ const SuperAdminCustomers = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input value={actionUser.phone || ''} onChange={(e) => setActionUser(a => ({ ...a, phone: e.target.value }))} className={`p-2 border rounded-md ${!actionEditMode ? 'bg-slate-50' : ''}`} readOnly={!actionEditMode} />
                 <select value={actionUser.role || ''} onChange={(e) => setActionUser(a => ({ ...a, role: e.target.value }))} disabled={!actionEditMode} className={`p-2 border rounded-md ${!actionEditMode ? 'bg-slate-50' : ''}`}>
-                  <option value="manager">Manager</option>
-                  <option value="owner">Owner</option>
+                  <option value="super_admin">Super Admin</option>
                   <option value="self_owner">Self Owner</option>
                   <option value="tenant">Tenant</option>
                 </select>

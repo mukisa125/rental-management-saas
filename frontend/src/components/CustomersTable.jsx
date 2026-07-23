@@ -4,7 +4,7 @@ import PlanBadge from './PlanBadge';
 import { MoreHorizontal } from 'lucide-react';
 
 const Avatar = ({ name }) => (
-  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-indigo-100 text-sm font-black text-blue-700 ring-1 ring-blue-100">
+  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-black text-blue-700 ring-1 ring-blue-100">
     {name ? name.charAt(0).toUpperCase() : '?'}
   </div>
 );
@@ -54,7 +54,7 @@ const CustomersTable = ({ customers = [], onSuspend, onActivate, onOpenActions }
                       <button onClick={() => onSuspend?.(c._id)} className="text-sm text-rose-600 px-3 py-1 rounded-md border border-rose-50 hover:bg-rose-50">Suspend</button>
                     )}
                     {c.subscriptionStatus === 'suspended' && (
-                      <button onClick={() => onActivate?.(c._id)} className="text-sm text-green-600 px-3 py-1 rounded-md border border-green-50 hover:bg-green-50">Activate</button>
+                      <button onClick={() => onActivate?.(c._id)} className="rounded-md border border-emerald-100 px-3 py-1 text-sm text-emerald-600 hover:bg-emerald-50">Activate</button>
                     )}
                     <button onClick={() => onOpenActions?.(c)} className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label={`Open actions for ${c.contactName || c.companyName}`}>
                       <MoreHorizontal className="h-4 w-4" />

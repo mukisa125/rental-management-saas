@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -11,20 +13,41 @@
   --color-primary-700: #1d4ed8;
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
+  --color-success-50: #ecfdf5;
+  --color-success-600: #059669;
+  --color-danger-50: #fff1f2;
+  --color-danger-600: #e11d48;
+  --color-warning-50: #fffbeb;
+  --color-warning-600: #d97706;
 }
 
 body {
   margin: 0;
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 :root {
   color-scheme: light;
+  --rpl-bg: #f8fafc;
+  --rpl-surface: #ffffff;
+  --rpl-surface-soft: #f8fafc;
+  --rpl-border: #e2e8f0;
+  --rpl-border-soft: #eef2f7;
+  --rpl-text: #0f172a;
+  --rpl-muted: #64748b;
+  --rpl-primary: #2563eb;
+  --rpl-primary-dark: #1d4ed8;
+  --rpl-success: #059669;
+  --rpl-warning: #d97706;
+  --rpl-danger: #e11d48;
+  --rpl-radius: 0.75rem;
+  --rpl-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --rpl-shadow-hover: 0 16px 38px rgba(15, 23, 42, 0.10);
 }
 
 :root.dark {
@@ -122,8 +145,269 @@ body {
   box-sizing: border-box;
 }
 
+::selection {
+  background: rgba(37, 99, 235, 0.16);
+  color: #0f172a;
+}
+
 #root {
   min-height: 100vh;
+}
+
+.rounded-2xl {
+  border-radius: 0.875rem;
+}
+
+.rounded-3xl {
+  border-radius: 1rem;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+main input:not([type='checkbox']):not([type='radio']):not([type='file']),
+main select,
+main textarea,
+.fixed.inset-0 input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.fixed.inset-0 select,
+.fixed.inset-0 textarea {
+  border-color: #e2e8f0;
+  background-color: #fff;
+}
+
+main input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+main select:focus,
+main textarea:focus,
+.fixed.inset-0 input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
+.fixed.inset-0 select:focus,
+.fixed.inset-0 textarea:focus {
+  border-color: var(--rpl-primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+}
+
+.rpl-card {
+  border: 1px solid var(--rpl-border);
+  border-radius: var(--rpl-radius);
+  background: var(--rpl-surface);
+  box-shadow: var(--rpl-shadow);
+}
+
+.rpl-panel {
+  overflow: hidden;
+  border: 1px solid var(--rpl-border);
+  border-radius: var(--rpl-radius);
+  background: var(--rpl-surface);
+  box-shadow: var(--rpl-shadow);
+}
+
+.rpl-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--rpl-border-soft);
+  padding: 1rem 1.25rem;
+}
+
+.rpl-page-title {
+  color: var(--rpl-text);
+  font-size: clamp(1.4rem, 1.2rem + 0.45vw, 1.85rem);
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.rpl-page-subtitle {
+  margin-top: 0.35rem;
+  color: var(--rpl-muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.rpl-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--rpl-primary);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+}
+
+.rpl-primary-button:hover {
+  background: var(--rpl-primary-dark);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.25);
+}
+
+.rpl-muted-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  border: 1px solid var(--rpl-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.rpl-muted-button:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: var(--rpl-primary);
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes authSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.auth-shell {
+  isolation: isolate;
+}
+
+.auth-fade-in {
+  animation: authFadeIn 420ms ease-out;
+}
+
+.auth-card-slide {
+  animation: authSlideUp 520ms ease-out;
+}
+
+.auth-feature-card {
+  transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+
+.auth-feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.auth-bg-shape {
+  display: none;
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(2px);
+  opacity: 0.22;
+  animation: authFloat 7s ease-in-out infinite;
+}
+
+.auth-bg-shape-1 {
+  top: 8%;
+  right: -64px;
+  width: 180px;
+  height: 180px;
+  background: #bfdbfe;
+}
+
+.auth-bg-shape-2 {
+  bottom: 6%;
+  left: -76px;
+  width: 220px;
+  height: 220px;
+  background: #c7d2fe;
+  animation-delay: 1.1s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-fade-in,
+  .auth-card-slide,
+  .auth-bg-shape {
+    animation: none !important;
+  }
+
+  .auth-feature-card {
+    transition: none;
+  }
+}
+
+:root.dark .auth-bg-shape-1,
+:root.dark .auth-bg-shape-2 {
+  opacity: 0.14;
+}
+
+/* Add/Edit Property wizard controls share the dashboard's quiet, focused treatment. */
+.fixed.inset-0.z-50 select,
+.fixed.inset-0.z-50 textarea,
+.fixed.inset-0.z-50 input:not([type='file']) {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #1e293b;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.625rem 0.75rem;
+  outline: none;
+}
+
+.fixed.inset-0.z-50 select:focus,
+.fixed.inset-0.z-50 textarea:focus,
+.fixed.inset-0.z-50 input:not([type='file']):focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.fixed.inset-0.z-50 textarea {
+  min-height: 7rem;
+  resize: vertical;
 }
 
 .responsive-table {
@@ -134,6 +418,175 @@ body {
 
 .responsive-table table {
   min-width: 720px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.responsive-table thead {
+  background: #f8fafc;
+}
+
+.responsive-table th {
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.responsive-table td {
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.responsive-table tbody tr {
+  transition: background-color 160ms ease;
+}
+
+.responsive-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.62);
+}
+
+.responsive-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@keyframes saFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes saModalPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sa-fade-in {
+  animation: saFadeIn 280ms ease-out;
+}
+
+.sa-card-pop {
+  animation: saCardPop 240ms ease-out;
+}
+
+.sa-modal-pop {
+  animation: saModalPop 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-fade-in,
+  .sa-card-pop,
+  .sa-modal-pop {
+    animation: none !important;
+  }
+}
+
+.unit-filter {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  padding: 0.625rem 0.75rem;
+}
+
+.unit-filter:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.pagination-button {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Keep browser printing scoped to the receipt, even though the dialog sits on
+   top of the dashboard in the normal app view. */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body.printing-receipt header,
+  body.printing-receipt aside,
+  .payments-print-scope.printing-receipt > *:not(.receipt-print-root) {
+    display: none !important;
+  }
+
+  body.printing-receipt main {
+    padding: 0 !important;
+  }
+
+  .payments-print-scope.printing-receipt .receipt-print-root {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .payments-print-scope.printing-receipt .receipt-print-paper {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .payments-print-scope.printing-receipt .receipt-print-actions,
+  .payments-print-scope.printing-receipt .receipt-print-root button,
+  .payments-print-scope.printing-receipt [aria-label='Close receipt'] {
+    display: none !important;
+  }
 }
 
 @media (max-width: 640px) {

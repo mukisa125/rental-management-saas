@@ -5,8 +5,7 @@ const subscriptionPlanSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    trim: true,
-    enum: ['Trial', 'Starter', 'Professional', 'Business', 'Enterprise']
+    trim: true
   },
   description: {
     type: String,
@@ -99,8 +98,50 @@ const subscriptionPlanSchema = new mongoose.Schema({
   },
   targetUserType: {
     type: String,
-    enum: ['manager', 'owner', 'self_owner', 'all'],
-    default: 'all'
+    enum: ['manager', 'owner', 'self_owner', 'landlord', 'property_seeker', 'all'],
+    default: 'landlord'
+  },
+  planType: {
+    type: String,
+    enum: ['landlord', 'property_seeker'],
+    default: 'landlord'
+  },
+  billingModel: {
+    type: String,
+    enum: ['monthly', 'annual', 'trial', 'pay_per_view', 'pay_per_visit', 'monthly_bundle', 'credit_bundle'],
+    default: 'monthly'
+  },
+  price: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  includedViews: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  includedVisits: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  validityDays: {
+    type: Number,
+    default: 30,
+    min: 0
+  },
+  maxDocuments: {
+    type: Number,
+    default: null
+  },
+  whatsAppAlertsLimit: {
+    type: Number,
+    default: null
+  },
+  propertyDisplayEnabled: {
+    type: Boolean,
+    default: true
   },
   deletedAt: {
     type: Date,

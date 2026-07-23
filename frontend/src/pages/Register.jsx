@@ -1,7 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, User, Phone, Building, Eye, EyeOff } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  User,
+  Phone,
+  Building,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Wallet,
+  Wrench,
+  BarChart3,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getDashboardPath } from '../utils/authRoutes';
+import BrandLogo from '../components/BrandLogo';
+import { PLATFORM_NAME } from '../constants/brand';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +26,7 @@ const Register = () => {
     confirmPassword: '',
     phone: '',
     company: '',
-    role: 'manager',
+    role: 'self_owner',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -49,8 +64,8 @@ const Register = () => {
     
     if (result.success) {
       if (result.token) {
-        // User approved, redirect to dashboard
-        navigate('/dashboard');
+        // User approved, redirect to role dashboard
+        navigate(getDashboardPath(result.user?.role), { replace: true });
       } else {
         // User pending approval
         setRegistrationStatus({
@@ -65,7 +80,7 @@ const Register = () => {
           confirmPassword: '',
           phone: '',
           company: '',
-          role: 'manager',
+          role: 'self_owner',
         });
       }
     } else {
@@ -76,177 +91,199 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary-700 items-center justify-center p-12">
-        <div className="text-white max-w-lg">
-          <div className="flex items-center mb-8">
-            <Building2 className="w-12 h-12 mr-4" />
-            <h1 className="text-3xl font-bold">Rental Management SaaS</h1>
-          </div>
-          <p className="text-xl mb-8 opacity-90">
-            Join thousands of property managers who trust our platform to manage their rentals efficiently
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <h3 className="font-semibold mb-2">Property Management</h3>
-              <p className="text-sm opacity-80">Track all your properties in one place</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <h3 className="font-semibold mb-2">Tenant Portal</h3>
-              <p className="text-sm opacity-80">Manage tenants and leases easily</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <h3 className="font-semibold mb-2">Payment Tracking</h3>
-              <p className="text-sm opacity-80">Automated rent collection and reporting</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <h3 className="font-semibold mb-2">Maintenance</h3>
-              <p className="text-sm opacity-80">Track and resolve maintenance requests</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="auth-shell relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="auth-bg-shape auth-bg-shape-1" aria-hidden="true" />
+      <div className="auth-bg-shape auth-bg-shape-2" aria-hidden="true" />
 
-      {/* Right Side - Register Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Account</h2>
-            <p className="text-gray-600 mb-8">Start managing your properties today</p>
+      <div className="auth-fade-in mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-2 lg:gap-8 lg:px-8 lg:py-10">
+        {/* Left Side - Marketing */}
+        <aside className="relative hidden overflow-hidden rounded-2xl bg-blue-700 p-8 text-white shadow-xl shadow-blue-900/10 lg:flex lg:flex-col lg:justify-start lg:gap-8">
+
+          <div className="relative z-10">
+            <div className="mb-6 flex items-center gap-3">
+              <BrandLogo size="lg" tone="onDark" />
+              <div>
+                <h1 className="text-2xl font-semibold leading-tight">{PLATFORM_NAME}</h1>
+                <p className="mt-1 text-sm font-semibold text-blue-100">Professional rental management</p>
+              </div>
+            </div>
+
+            <h2 className="max-w-md text-3xl font-semibold leading-tight text-white">
+              Build a modern rental operation from day one.
+            </h2>
+            <p className="mt-4 max-w-md text-base text-blue-50/90">
+              Create your account to manage tenants, properties, invoices, and maintenance in one place.
+            </p>
+          </div>
+
+          <div className="relative z-10 grid gap-3 sm:grid-cols-2">
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <ShieldCheck className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Secure Platform</p>
+              <p className="mt-1 text-xs text-blue-50/90">Trusted, role-aware access for teams and tenants.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <Wallet className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Payment Visibility</p>
+              <p className="mt-1 text-xs text-blue-50/90">Track rent activity with clear payment records.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <Wrench className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Maintenance Flow</p>
+              <p className="mt-1 text-xs text-blue-50/90">Handle maintenance tickets with less admin work.</p>
+            </div>
+            <div className="auth-feature-card rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <BarChart3 className="mb-2 h-5 w-5 text-blue-100" />
+              <p className="text-sm font-semibold">Growth Insights</p>
+              <p className="mt-1 text-xs text-blue-50/90">Monitor occupancy and performance trends easily.</p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Side - Register Form */}
+        <div className="flex items-center justify-center">
+          <div className="auth-card-slide w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+            <div className="mb-6 lg:hidden">
+              <div className="mb-4 flex items-center gap-3">
+                <BrandLogo />
+                <p className="text-base font-semibold text-slate-900">{PLATFORM_NAME}</p>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">Create your account</h2>
+            <p className="mt-1 text-sm text-slate-600">Set up your profile and start managing rentals professionally.</p>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
 
             {registrationStatus && registrationStatus.pending && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
-                <p className="font-semibold mb-2">✓ Registration Successful!</p>
+              <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-700">
+                <p className="mb-1 text-sm font-semibold">Registration successful</p>
                 <p className="text-sm">{registrationStatus.message}</p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <User className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
                     placeholder="Enter Full Name"
                     required
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
                     placeholder="you@example.com"
                     required
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Phone
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
                     placeholder="+256 700 000 000"
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   User Role
                 </label>
-                <select
+                <div className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                  Property manager / Landlord
+                </div>
+                <input
+                  type="hidden"
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
-                  required
-                >
-                  <option value="manager">Manager (requires approval)</option>
-                  <option value="owner">Owner (requires approval)</option>
-                  <option value="tenant">Tenant</option>
-                </select>
+                />
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Company Name
                 </label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Building className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
                     placeholder="Your Company Ltd"
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-12 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                    placeholder="Create a password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                    placeholder="Confirm your password"
                     required
                   />
                 </div>
@@ -255,15 +292,15 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-primary-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-lg hover:shadow-primary-700/20 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>
 
-            <p className="text-center text-gray-600 mt-6">
+            <p className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/login" className="font-semibold text-primary-600 transition-colors hover:text-primary-700">
                 Sign in
               </Link>
             </p>
