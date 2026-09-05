@@ -2,8 +2,8 @@
 
 ## 🔐 Super Admin Credentials
 
-**Email:** `admin@rentsaas.com`  
-**Password:** `AdminPassword123`
+**Email:** `super@ug.com`  
+**Password:** `SuperAdmin@2026!`
 
 These credentials are created automatically when you run the seed script. The super admin account has:
 - Role: `super_admin`
@@ -227,7 +227,7 @@ node seed.js
 
 **Output will include:**
 ```
-Super Admin Credentials - Email: admin@rentsaas.com | Password: AdminPassword123
+Super Admin Credentials - Email: super@ug.com | Password: SuperAdmin@2026!
 ```
 
 ### Step 2: Test Super Admin Login

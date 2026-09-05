@@ -16,8 +16,8 @@ Connected to MongoDB
 Cleared existing data
 Created subscription plans: 5
 Created super admin company
-Created super admin user: admin@rentsaas.com
-Super Admin Credentials - Email: admin@rentsaas.com | Password: AdminPassword123
+Created super admin user: super@ug.com
+Super Admin Credentials - Email: super@ug.com | Password: SuperAdmin@2026!
 Created manager user: mark@example.com
 ...
 Database seeded successfully!

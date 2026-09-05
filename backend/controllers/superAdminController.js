@@ -16,6 +16,12 @@ const subscriptionService = require('../services/subscriptionService');
 const reportingService = require('../services/reportingService');
 const activityLogService = require('../services/activityLogService');
 const systemMonitoringService = require('../services/systemMonitoringService');
+const {
+  refreshCompanySubscriptionState,
+  createRenewalTransaction,
+  calculatePlanAmount,
+  generateInvoiceNumber
+} = require('../services/billingLifecycleService');
 const { applyPurchasedViewCredits } = require('../services/propertySeekerBillingService');
 
 const toNumber = (value, fallback = 0) => {
@@ -626,6 +632,10 @@ const changeCustomerPlan = async (req, res) => {
 
     const oldPlanId = company.subscriptionPlan;
     company.subscriptionPlan = newPlanId;
+    company.subscriptionStatus = company.subscriptionStatus === 'expired' ? 'trial' : company.subscriptionStatus || 'trial';
+    company.billingCycle = company.billingCycle || 'monthly';
+    company.subscriptionStartDate = company.subscriptionStartDate || new Date();
+    company.subscriptionEndDate = company.subscriptionEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await company.save();
 
     await activityLogService.logActivity({
@@ -645,6 +655,113 @@ const changeCustomerPlan = async (req, res) => {
       success: true,
       message: 'Subscription plan changed successfully',
       company
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getCustomerSubscriptionStatus = async (req, res) => {
+  try {
+    const company = await Company.findById(req.params.companyId).populate('subscriptionPlan');
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    const refreshed = await refreshCompanySubscriptionState(company._id);
+    const currentPlan = refreshed?.subscriptionPlan || company.subscriptionPlan;
+    const nextBillingDate = refreshed?.nextPaymentDueDate || refreshed?.subscriptionEndDate || new Date();
+    const amount = currentPlan ? calculatePlanAmount({
+      plan: currentPlan,
+      billingCycle: refreshed?.billingCycle || 'monthly',
+      months: 1
+    }) : 0;
+
+    res.json({
+      success: true,
+      company: refreshed || company,
+      status: refreshed?.subscriptionStatus || company.subscriptionStatus || 'trial',
+      nextBillingDate,
+      amount,
+      currency: 'UGX'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const refreshCustomerSubscription = async (req, res) => {
+  try {
+    const company = await Company.findById(req.params.companyId).populate('subscriptionPlan');
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    const refreshed = await refreshCompanySubscriptionState(company._id);
+
+    await activityLogService.logActivity({
+      user: req.user._id,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      action: 'subscription_refresh',
+      entity: 'company',
+      entityId: company._id,
+      entityName: company.companyName,
+      description: `Refreshed subscription state for ${company.companyName}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      message: 'Subscription state refreshed successfully',
+      company: refreshed || company,
+      status: refreshed?.subscriptionStatus || company.subscriptionStatus || 'trial'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const renewCustomerSubscription = async (req, res) => {
+  try {
+    const { paymentMethod = 'manual', billingCycle = 'monthly', planId } = req.body || {};
+    const company = await Company.findById(req.params.companyId).populate('subscriptionPlan');
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+
+    const selectedPlanId = planId || company.subscriptionPlan?._id || company.subscriptionPlan;
+    const result = await createRenewalTransaction({
+      companyId: company._id,
+      planId: selectedPlanId,
+      billingCycle,
+      paymentMethod,
+      months: 1,
+      invoicePrefix: 'SUB'
+    });
+
+    await activityLogService.logActivity({
+      user: req.user._id,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      action: 'subscription_renewal',
+      entity: 'company',
+      entityId: company._id,
+      entityName: company.companyName,
+      description: `Renewed subscription for ${company.companyName}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      message: 'Subscription renewal created successfully',
+      company: result.company,
+      transaction: result.transaction,
+      invoiceId: result.invoiceId,
+      amount: result.amount,
+      currency: 'UGX'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -2720,6 +2837,9 @@ module.exports = {
   suspendCustomer,
   activateCustomer,
   changeCustomerPlan,
+  getCustomerSubscriptionStatus,
+  refreshCustomerSubscription,
+  renewCustomerSubscription,
   getSystemMonitor,
   getActivityLogs,
   getSubscriptionAnalytics,

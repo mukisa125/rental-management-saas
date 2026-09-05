@@ -164,8 +164,8 @@ const seedDatabase = async () => {
     // Create super admin user first (without company)
     const superAdmin = await User.create({
       name: 'Super Admin',
-      email: 'admin@rentsaas.com',
-      password: 'AdminPassword123',
+      email: 'super@ug.com',
+      password: 'SuperAdmin@2026!',
       phone: '+256 700 000 000',
       role: 'super_admin',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
@@ -179,7 +179,7 @@ const seedDatabase = async () => {
     const superAdminCompany = await Company.create({
       companyName: 'Rental Management SaaS Platform',
       ownerName: 'Super Admin',
-      email: 'admin@rentsaas.com',
+      email: 'super@ug.com',
       phone: '+256 700 000 000',
       superAdmin: superAdmin._id,
       subscriptionPlan: plans[4]._id, // Enterprise plan
@@ -193,7 +193,7 @@ const seedDatabase = async () => {
     superAdmin.company = superAdminCompany._id;
     await superAdmin.save();
 
-    console.log('Super Admin Credentials - Email: admin@rentsaas.com | Password: AdminPassword123');
+    console.log('Super Admin Credentials - Email: super@ug.com | Password: SuperAdmin@2026!');
 
     // Create manager user
     const manager = await User.create({
@@ -279,12 +279,13 @@ const seedDatabase = async () => {
     console.log('\n✅ Database seeded successfully!');
     console.log('='.repeat(60));
     console.log('SUPER ADMIN LOGIN CREDENTIALS:');
-    console.log('Email: admin@rentsaas.com');
-    console.log('Password: AdminPassword123');
+    console.log('Email: super@ug.com');
+    console.log('Password: SuperAdmin@2026!');
     console.log('='.repeat(60) + '\n');
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('Error seeding database:', error.message);
+    console.error(error);
     process.exit(1);
   }
 };

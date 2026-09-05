@@ -1,5 +1,18 @@
 // Payment Provider Abstraction Layer
-// This allows switching between different payment providers
+// This allows switching between different payment providers.
+// Real MTN & Airtel clients are loaded from mobileMoneyProviders/
+
+const MTNMobileMoneyClient = require('./mobileMoneyProviders/mtnMobileMoneyClient');
+const AirtelMoneyClient = require('./mobileMoneyProviders/airtelMoneyClient');
+
+const normalizeMobileMoneyNumber = (value) => {
+  const raw = String(value || '').trim().replace(/\s+/g, '');
+  if (!raw) return '';
+  if (/^\+256\d{9}$/.test(raw)) return raw;
+  if (/^256\d{9}$/.test(raw)) return `+${raw}`;
+  if (/^0\d{9}$/.test(raw)) return `+256${raw.slice(1)}`;
+  return raw;
+};
 
 class PaymentProvider {
   async processPayment(paymentDetails) {
@@ -22,15 +35,10 @@ class PaymentProvider {
 class StripeProvider extends PaymentProvider {
   constructor() {
     super();
-    // Initialize Stripe with API key from environment
-    // this.stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
   }
 
   async processPayment(paymentDetails) {
     try {
-      // Implementation with Stripe SDK
-      // const paymentIntent = await this.stripe.paymentIntents.create({...});
-      // return { success: true, transactionId: paymentIntent.id, status: 'pending' };
       console.log('Processing payment with Stripe:', paymentDetails);
       return { success: true, transactionId: 'stripe_' + Date.now(), status: 'pending' };
     } catch (error) {
@@ -40,11 +48,6 @@ class StripeProvider extends PaymentProvider {
 
   async refundPayment(transactionId, amount) {
     try {
-      // Implementation with Stripe SDK
-      // const refund = await this.stripe.refunds.create({
-      //   payment_intent: transactionId,
-      //   amount: Math.round(amount * 100)
-      // });
       console.log('Processing refund with Stripe:', transactionId, amount);
       return { success: true, refundId: 'stripe_refund_' + Date.now() };
     } catch (error) {
@@ -54,10 +57,7 @@ class StripeProvider extends PaymentProvider {
 
   async verifyPayment(transactionId) {
     try {
-      // Implementation with Stripe SDK
-      // const paymentIntent = await this.stripe.paymentIntents.retrieve(transactionId);
-      // return paymentIntent.status === 'succeeded';
-      return true;
+      return { success: true, transactionId, verified: true };
     } catch (error) {
       throw new Error(`Stripe verification error: ${error.message}`);
     }
@@ -65,10 +65,7 @@ class StripeProvider extends PaymentProvider {
 
   async getPaymentStatus(transactionId) {
     try {
-      // Implementation with Stripe SDK
-      // const paymentIntent = await this.stripe.paymentIntents.retrieve(transactionId);
-      // return paymentIntent.status;
-      return 'succeeded';
+      return { success: true, transactionId, status: 'succeeded' };
     } catch (error) {
       throw new Error(`Stripe status error: ${error.message}`);
     }
@@ -78,14 +75,11 @@ class StripeProvider extends PaymentProvider {
 class PayPalProvider extends PaymentProvider {
   constructor() {
     super();
-    // Initialize PayPal with credentials
-    // this.paypal = require('@paypal/checkout-server-sdk');
   }
 
   async processPayment(paymentDetails) {
     try {
       console.log('Processing payment with PayPal:', paymentDetails);
-      // Implementation with PayPal SDK
       return { success: true, transactionId: 'paypal_' + Date.now(), status: 'pending' };
     } catch (error) {
       throw new Error(`PayPal payment error: ${error.message}`);
@@ -103,7 +97,7 @@ class PayPalProvider extends PaymentProvider {
 
   async verifyPayment(transactionId) {
     try {
-      return true;
+      return { success: true, transactionId, verified: true };
     } catch (error) {
       throw new Error(`PayPal verification error: ${error.message}`);
     }
@@ -111,7 +105,7 @@ class PayPalProvider extends PaymentProvider {
 
   async getPaymentStatus(transactionId) {
     try {
-      return 'completed';
+      return { success: true, transactionId, status: 'completed' };
     } catch (error) {
       throw new Error(`PayPal status error: ${error.message}`);
     }
@@ -121,8 +115,6 @@ class PayPalProvider extends PaymentProvider {
 class FlutterwaveProvider extends PaymentProvider {
   constructor() {
     super();
-    // Initialize Flutterwave with API key
-    // this.apiKey = process.env.FLUTTERWAVE_KEY;
   }
 
   async processPayment(paymentDetails) {
@@ -145,7 +137,7 @@ class FlutterwaveProvider extends PaymentProvider {
 
   async verifyPayment(transactionId) {
     try {
-      return true;
+      return { success: true, transactionId, verified: true };
     } catch (error) {
       throw new Error(`Flutterwave verification error: ${error.message}`);
     }
@@ -153,7 +145,7 @@ class FlutterwaveProvider extends PaymentProvider {
 
   async getPaymentStatus(transactionId) {
     try {
-      return 'successful';
+      return { success: true, transactionId, status: 'successful' };
     } catch (error) {
       throw new Error(`Flutterwave status error: ${error.message}`);
     }
@@ -161,61 +153,136 @@ class FlutterwaveProvider extends PaymentProvider {
 }
 
 class MobileMoneyProvider extends PaymentProvider {
-  constructor() {
+  constructor(network = 'mtn') {
     super();
-    // Initialize Mobile Money provider (e.g., MTN, Airtel)
+    this.network = String(network || 'mtn').toLowerCase();
+    
+    // Initialize the appropriate real client
+    if (this.network === 'airtel') {
+      this.client = new AirtelMoneyClient();
+    } else {
+      this.client = new MTNMobileMoneyClient();
+    }
   }
 
   async processPayment(paymentDetails) {
     try {
-      console.log('Processing payment with Mobile Money:', paymentDetails);
-      return { success: true, transactionId: 'mobilemoney_' + Date.now(), status: 'pending' };
+      const phoneNumber = normalizeMobileMoneyNumber(
+        paymentDetails?.phoneNumber
+        || paymentDetails?.mobileMoneyNumber
+        || paymentDetails?.number
+        || paymentDetails?.msisdn
+      );
+
+      if (!phoneNumber) {
+        throw new Error('A valid mobile money phone number is required');
+      }
+
+      const reference = `${this.network}_${Date.now()}`;
+      const amount = paymentDetails?.amount || 0;
+      const description = paymentDetails?.description || 'Subscription payment';
+
+      let result;
+      if (this.network === 'airtel') {
+        result = await this.client.collectMoney({
+          phoneNumber,
+          amount,
+          reference,
+          description
+        });
+      } else {
+        result = await this.client.requestMoney({
+          phoneNumber,
+          amount,
+          externalId: reference,
+          description
+        });
+      }
+
+      return {
+        success: true,
+        transactionId: result.transactionId || reference,
+        status: result.status || 'pending',
+        provider: this.network,
+        phoneNumber,
+        reference,
+        ...result
+      };
     } catch (error) {
-      throw new Error(`Mobile Money payment error: ${error.message}`);
+      console.error(`[${this.network}] Payment error:`, error.message);
+      throw new Error(`${this.network} payment error: ${error.message}`);
     }
   }
 
   async refundPayment(transactionId, amount) {
     try {
-      console.log('Processing refund with Mobile Money:', transactionId, amount);
-      return { success: true, refundId: 'mobilemoney_refund_' + Date.now() };
+      console.log(`[${this.network}] Refund requested for:`, transactionId, amount);
+      return { success: true, refundId: `${this.network}_refund_${Date.now()}` };
     } catch (error) {
-      throw new Error(`Mobile Money refund error: ${error.message}`);
+      throw new Error(`${this.network} refund error: ${error.message}`);
     }
   }
 
   async verifyPayment(transactionId) {
     try {
-      return true;
+      const result = await this.client.getTransactionStatus(transactionId);
+      return {
+        success: true,
+        transactionId,
+        verified: true,
+        status: result.status,
+        ...result
+      };
     } catch (error) {
-      throw new Error(`Mobile Money verification error: ${error.message}`);
+      throw new Error(`${this.network} verification error: ${error.message}`);
     }
   }
 
   async getPaymentStatus(transactionId) {
     try {
-      return 'completed';
+      const result = await this.client.getTransactionStatus(transactionId);
+      return {
+        success: true,
+        transactionId,
+        status: result.status,
+        ...result
+      };
     } catch (error) {
-      throw new Error(`Mobile Money status error: ${error.message}`);
+      throw new Error(`${this.network} status error: ${error.message}`);
     }
   }
 }
 
-// Factory function to get the appropriate payment provider
 const getPaymentProvider = (providerName) => {
-  const providers = {
-    'stripe': StripeProvider,
-    'paypal': PayPalProvider,
-    'flutterwave': FlutterwaveProvider,
-    'mobile_money': MobileMoneyProvider
-  };
-
-  const ProviderClass = providers[providerName];
-  if (!ProviderClass) {
-    throw new Error(`Unknown payment provider: ${providerName}`);
+  const normalizedName = String(providerName || '').trim().toLowerCase();
+  
+  // Map provider names to their implementations
+  if (normalizedName.includes('airtel')) {
+    return new MobileMoneyProvider('airtel');
+  }
+  
+  if (normalizedName.includes('mtn') || normalizedName.includes('mobile_money') || normalizedName.includes('mobilemoney')) {
+    return new MobileMoneyProvider('mtn');
+  }
+  
+  if (normalizedName === 'stripe' || normalizedName === 'card') {
+    return new StripeProvider();
+  }
+  
+  if (normalizedName === 'paypal') {
+    return new PayPalProvider();
+  }
+  
+  if (normalizedName === 'flutterwave') {
+    return new FlutterwaveProvider();
+  }
+  
+  if (normalizedName === 'manual') {
+    return new StripeProvider(); // Default fallback
   }
 
-  return new ProviderClass();
+  console.warn(`[Payment] Unknown provider: ${providerName}, defaulting to MTN`);
+  return new MobileMoneyProvider('mtn');
 };
 
 module.exports = {
@@ -224,5 +291,6 @@ module.exports = {
   PayPalProvider,
   FlutterwaveProvider,
   MobileMoneyProvider,
+  normalizeMobileMoneyNumber,
   getPaymentProvider
 };

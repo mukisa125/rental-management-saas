@@ -38,6 +38,9 @@ router.post('/announcements', superAdminController.createAnnouncement);
 // Customer Management
 router.get('/customers', superAdminController.getCustomers);
 router.get('/customers/:companyId', superAdminController.getCustomerDetails);
+router.get('/customers/:companyId/subscription-status', superAdminController.getCustomerSubscriptionStatus);
+router.post('/customers/:companyId/refresh-subscription', superAdminController.refreshCustomerSubscription);
+router.post('/customers/:companyId/renew-subscription', superAdminController.renewCustomerSubscription);
 router.post('/customers/:companyId/suspend', superAdminController.suspendCustomer);
 router.post('/customers/:companyId/activate', superAdminController.activateCustomer);
 router.post('/customers/:companyId/change-plan', superAdminController.changeCustomerPlan);

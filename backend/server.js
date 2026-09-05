@@ -56,6 +56,7 @@ app.use('/api/tenant-portal', require('./routes/tenantPortalRoutes'));
 app.use('/api/tenant-applications', require('./routes/tenantApplicationRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/documents', require('./routes/documentRoutes'));
+app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api/property-seeker', require('./routes/propertySeekerRoutes'));
 
